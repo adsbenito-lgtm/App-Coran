@@ -1,6 +1,6 @@
 import React from 'react';
-import { AppSettings, QuranFont, ReadingMode } from '../types';
-import { Moon, Sun, Type, Monitor, BookOpen, List } from 'lucide-react';
+import { AppSettings, QuranFont, ReadingMode, VerseNumberStyle, TafseerId } from '../types';
+import { Moon, Sun, Type, Monitor, BookOpen, List, Circle, Square, Flower, Book } from 'lucide-react';
 
 interface SettingsProps {
   settings: AppSettings;
@@ -16,6 +16,10 @@ const Settings: React.FC<SettingsProps> = ({ settings, setSettings }) => {
   const changeFontSize = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSettings(prev => ({ ...prev, fontSize: parseInt(e.target.value) }));
   };
+  
+  const changeTafseerFontSize = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSettings(prev => ({ ...prev, tafseerFontSize: parseInt(e.target.value) }));
+  };
 
   const changeFontFamily = (font: QuranFont) => {
     setSettings(prev => ({ ...prev, fontFamily: font }));
@@ -23,6 +27,14 @@ const Settings: React.FC<SettingsProps> = ({ settings, setSettings }) => {
 
   const changeReadingMode = (mode: ReadingMode) => {
     setSettings(prev => ({ ...prev, readingMode: mode }));
+  };
+
+  const changeVerseNumberStyle = (style: VerseNumberStyle) => {
+    setSettings(prev => ({ ...prev, verseNumberStyle: style }));
+  };
+
+  const changeTafseer = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setSettings(prev => ({ ...prev, selectedTafseer: e.target.value as TafseerId }));
   };
 
   return (
@@ -71,6 +83,76 @@ const Settings: React.FC<SettingsProps> = ({ settings, setSettings }) => {
         </div>
       </div>
 
+      {/* Verse Number Style */}
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <h3 className="font-bold mb-3">شكل أرقام الآيات</h3>
+        <div className="flex gap-3 justify-center">
+            <button
+                onClick={() => changeVerseNumberStyle('circle')}
+                className={`flex-1 flex flex-col items-center p-3 rounded-lg border transition-all ${settings.verseNumberStyle === 'circle' ? 'bg-emerald-50 border-emerald-500' : 'border-gray-200 dark:border-gray-600'}`}
+            >
+                <div className="w-8 h-8 rounded-full border border-emerald-500 flex items-center justify-center text-xs font-bold mb-2">1</div>
+                <span className="text-xs">دائري</span>
+            </button>
+            <button
+                onClick={() => changeVerseNumberStyle('square')}
+                className={`flex-1 flex flex-col items-center p-3 rounded-lg border transition-all ${settings.verseNumberStyle === 'square' ? 'bg-emerald-50 border-emerald-500' : 'border-gray-200 dark:border-gray-600'}`}
+            >
+                <div className="w-8 h-8 rounded-md border border-emerald-500 flex items-center justify-center text-xs font-bold mb-2">1</div>
+                <span className="text-xs">مربع</span>
+            </button>
+            <button
+                onClick={() => changeVerseNumberStyle('flower')}
+                className={`flex-1 flex flex-col items-center p-3 rounded-lg border transition-all ${settings.verseNumberStyle === 'flower' ? 'bg-emerald-50 border-emerald-500' : 'border-gray-200 dark:border-gray-600'}`}
+            >
+                <div className="w-8 h-8 relative flex items-center justify-center mb-2">
+                    <svg viewBox="0 0 24 24" className="absolute inset-0 w-full h-full text-emerald-500" fill="none" stroke="currentColor" strokeWidth="1.5">
+                       <circle cx="12" cy="12" r="10" strokeDasharray="4 2" />
+                    </svg>
+                    <span className="text-xs font-bold">1</span>
+                </div>
+                <span className="text-xs">مزخرف</span>
+            </button>
+        </div>
+      </div>
+
+      {/* Tafseer Selection */}
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-amber-100 dark:bg-amber-900 rounded-full">
+                  <Book size={20} className="text-amber-700 dark:text-amber-300" />
+              </div>
+              <h3 className="font-bold">كتاب التفسير</h3>
+          </div>
+          <select 
+            value={settings.selectedTafseer}
+            onChange={changeTafseer}
+            className="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-white outline-none focus:border-emerald-500"
+          >
+              <option value="ar.muyassar">التفسير الميسر (يوصى به)</option>
+              <option value="ar.jalalayn">تفسير الجلالين</option>
+              <option value="ar.ibnkathir">تفسير ابن كثير</option>
+              <option value="ar.qurtubi">تفسير القرطبي</option>
+              <option value="ar.tabari">تفسير الطبري</option>
+          </select>
+          <div className="mt-4">
+              <label className="text-xs text-gray-500 dark:text-gray-400 mb-2 block">حجم خط التفسير</label>
+              <div className="flex items-center gap-4">
+                  <span className="text-xs">صغير</span>
+                  <input 
+                    type="range" 
+                    min="1" 
+                    max="5" 
+                    step="1" 
+                    value={settings.tafseerFontSize} 
+                    onChange={changeTafseerFontSize}
+                    className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-amber-600"
+                  />
+                  <span className="text-xs font-bold">كبير</span>
+              </div>
+          </div>
+      </div>
+
       {/* Font Family Selection */}
       <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
         <h3 className="font-bold mb-3">نوع الخط</h3>
@@ -101,8 +183,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, setSettings }) => {
             <Type size={20} className="text-blue-700 dark:text-blue-300" />
           </div>
           <div>
-            <h3 className="font-bold">حجم الخط</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">تحكم في حجم خط النصوص والقرآن</p>
+            <h3 className="font-bold">حجم خط القرآن</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">تحكم في حجم خط النصوص القرآنية</p>
           </div>
         </div>
         

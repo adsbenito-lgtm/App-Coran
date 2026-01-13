@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, FileText, X, AlertCircle, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import { fetchQuranPage } from '../services/quranApi';
-import { QuranPage } from '../types';
+import { QuranPage, AppSettings } from '../types';
 
 interface BookItem {
   id: string;
@@ -10,6 +10,10 @@ interface BookItem {
   type: 'pdf' | 'interactive';
   coverColor: string;
   pageCount?: number;
+}
+
+interface BooksViewProps {
+    settings?: AppSettings;
 }
 
 const SAMPLE_BOOKS: BookItem[] = [
@@ -23,7 +27,7 @@ const SAMPLE_BOOKS: BookItem[] = [
   }
 ];
 
-const BooksView: React.FC = () => {
+const BooksView: React.FC<BooksViewProps> = ({ settings }) => {
   // Library State
   const [books, setBooks] = useState<BookItem[]>(SAMPLE_BOOKS);
   const [activeBook, setActiveBook] = useState<BookItem | null>(null);
@@ -86,6 +90,42 @@ const BooksView: React.FC = () => {
     if (currentPage > 1) setCurrentPage(p => p - 1);
   };
 
+  // Helper to render verse number based on settings
+  const renderVerseNumber = (num: number) => {
+      const style = settings?.verseNumberStyle || 'circle';
+
+      if (style === 'flower') {
+          return (
+            <span className="inline-grid place-items-center w-8 h-8 mx-1 align-middle relative">
+                <svg viewBox="0 0 24 24" className="w-full h-full text-emerald-200 dark:text-emerald-900 absolute inset-0" fill="currentColor">
+                    {/* 8-pointed star-like shape / octagram */}
+                    <path d="M12 2l2.5 6h6.5l-5 4 2 6-6-4-6 4 2-6-5-4h6.5z" /> 
+                </svg>
+                <span className="relative z-10 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">{num.toLocaleString('ar-EG')}</span>
+            </span>
+          );
+      }
+      
+      const shapeClass = style === 'square' ? 'rounded-md' : 'rounded-full';
+      
+      return (
+        <span className={`inline-flex items-center justify-center w-8 h-8 mx-1 text-xs text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/30 ${shapeClass}`}>
+            {num.toLocaleString('ar-EG')}
+        </span>
+      );
+  };
+
+  // Helper to intelligently format Surah name
+  const formatSurahName = (name: string) => {
+      if (!name) return "";
+      // Remove diacritics (tashkeel) to check prefix properly
+      const normalized = name.replace(/[\u064B-\u065F\u0670]/g, "").trim();
+      if (normalized.startsWith('سورة')) {
+          return name;
+      }
+      return `سورة ${name}`;
+  };
+
   // --- RENDER: READER VIEW ---
   if (activeBook) {
     return (
@@ -129,7 +169,7 @@ const BooksView: React.FC = () => {
                                              {showSurahHeader && ayah.surah && (
                                                  <div className="mt-6 mb-4 border-y-2 border-[#d4b981] py-2 bg-[#fdfcf5] dark:bg-[#252525]">
                                                      <h2 className="font-quran text-2xl text-emerald-800 dark:text-emerald-400">
-                                                         سورة {ayah.surah.name}
+                                                         {formatSurahName(ayah.surah.name)}
                                                      </h2>
                                                  </div>
                                              )}
@@ -142,9 +182,7 @@ const BooksView: React.FC = () => {
                                                 className="inline leading-[2.5] text-xl font-quran text-justify text-gray-900 dark:text-gray-100"
                                              >
                                                 {ayah.text} 
-                                                <span className="inline-flex items-center justify-center w-8 h-8 mx-1 text-xs text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 rounded-full bg-emerald-50 dark:bg-emerald-900/30">
-                                                    {ayah.number.toLocaleString('ar-EG')}
-                                                </span>
+                                                {renderVerseNumber(ayah.number)}
                                              </span>
                                          </React.Fragment>
                                      )

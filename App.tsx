@@ -131,8 +131,11 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>({ 
     darkMode: false, 
     fontSize: 2,
+    tafseerFontSize: 3, // Default Tafseer Font Size
     fontFamily: 'Amiri',
-    readingMode: 'mushaf'
+    readingMode: 'mushaf',
+    verseNumberStyle: 'circle',
+    selectedTafseer: 'ar.muyassar'
   });
   const [selectedSurah, setSelectedSurah] = useState<Surah | null>(null);
   const [initialPage, setInitialPage] = useState<number>(1);
@@ -320,7 +323,7 @@ const App: React.FC = () => {
     
     // Books Logic
     if (activeTab === Tab.BOOKS) {
-      return <BooksView />;
+      return <BooksView settings={settings} />;
     }
 
     // Settings Logic

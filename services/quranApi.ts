@@ -85,3 +85,19 @@ export const fetchQuranPage = async (pageNumber: number): Promise<QuranPage | nu
     return null;
   }
 };
+
+// Fetch Tafseer for a specific verse
+export const fetchTafseer = async (surahId: number, verseNumber: number, edition: string): Promise<string> => {
+  try {
+    const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surahId}:${verseNumber}/${edition}`);
+    const data = await response.json();
+
+    if (data.code === 200 && data.data && data.data.text) {
+      return data.data.text;
+    }
+    return "عذراً، التفسير غير متوفر لهذه الآية.";
+  } catch (error) {
+    console.error("Failed to fetch tafseer:", error);
+    return "حدث خطأ أثناء تحميل التفسير.";
+  }
+};

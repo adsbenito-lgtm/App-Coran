@@ -51,12 +51,17 @@ export interface LastReadState {
 
 export type QuranFont = 'Amiri' | 'Noto Naskh Arabic' | 'Scheherazade New';
 export type ReadingMode = 'list' | 'mushaf';
+export type VerseNumberStyle = 'circle' | 'square' | 'flower';
+export type TafseerId = 'ar.muyassar' | 'ar.jalalayn' | 'ar.ibnkathir' | 'ar.qurtubi' | 'ar.tabari';
 
 export interface AppSettings {
   darkMode: boolean;
-  fontSize: number; // 1-5 scale
+  fontSize: number; // 1-5 scale for Quran text
+  tafseerFontSize: number; // 1-5 scale for Tafseer text
   fontFamily: QuranFont;
   readingMode: ReadingMode;
+  verseNumberStyle: VerseNumberStyle;
+  selectedTafseer: TafseerId;
 }
 
 export enum Tab {
