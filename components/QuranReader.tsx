@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Surah, Verse, AppSettings, QuranPage, TafseerId } from '../types';
-import { ChevronRight, ChevronLeft, BookOpen, RotateCw, X, Play, Pause, SkipForward, SkipBack } from 'lucide-react';
+import { ChevronRight, ChevronLeft, BookOpen, RotateCw, X, Play, Pause, SkipForward, SkipBack, AlertCircle } from 'lucide-react';
 import { fetchSurahVerses, fetchQuranPage, fetchTafseer } from '../services/quranApi';
 import { getAudioUrl, getReciterName } from '../services/audioService';
 
@@ -21,6 +21,7 @@ const QuranReader: React.FC<QuranReaderProps> = ({ settings, goBack, surah, init
   // Audio State
   const [isPlaying, setIsPlaying] = useState(false);
   const [playingVerse, setPlayingVerse] = useState<Verse | null>(null);
+  const [audioError, setAudioError] = useState<boolean>(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   // Page-based State (Mushaf Mode)
@@ -44,24 +45,41 @@ const QuranReader: React.FC<QuranReaderProps> = ({ settings, goBack, surah, init
   // --- Audio Logic ---
   useEffect(() => {
     // Initialize Audio
-    audioRef.current = new Audio();
+    if (!audioRef.current) {
+        audioRef.current = new Audio();
+    }
+    
+    const audio = audioRef.current;
+    
+    const handleError = () => {
+        console.warn("Audio source failed to load");
+        setIsPlaying(false);
+        setAudioError(true);
+    };
+
+    const handleEnded = () => {
+        playNextVerse();
+    };
+
+    audio.addEventListener('error', handleError);
+    audio.addEventListener('ended', handleEnded);
     
     // Cleanup on unmount
     return () => {
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current = null;
-        }
+        audio.removeEventListener('error', handleError);
+        audio.removeEventListener('ended', handleEnded);
+        audio.pause();
     };
   }, []);
 
   useEffect(() => {
     if (!playingVerse || !audioRef.current) return;
 
+    // Reset error state when verse changes
+    setAudioError(false);
+
     // Construct URL for playingVerse
     // Note: playingVerse needs valid surah data. 
-    // In Mushaf mode, playingVerse might come from pageMetadata without full surah context sometimes,
-    // but our fetchQuranPage maps surahs correctly.
     const sId = playingVerse.surah?.id || surah.id;
     const url = getAudioUrl(settings.selectedReciter, sId, playingVerse.number);
     
@@ -75,8 +93,13 @@ const QuranReader: React.FC<QuranReaderProps> = ({ settings, goBack, surah, init
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
             playPromise.catch(error => {
-                console.error("Audio play failed", error);
-                setIsPlaying(false);
+                // If it's an AbortError (user paused quickly), ignore. 
+                // If it's NotSupportedError, handle it.
+                if (error.name !== 'AbortError') {
+                    console.error("Audio play failed", error);
+                    setIsPlaying(false);
+                    setAudioError(true);
+                }
             });
         }
     } else {
@@ -89,14 +112,14 @@ const QuranReader: React.FC<QuranReaderProps> = ({ settings, goBack, surah, init
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
-    // Handle Ended Event -> Next Verse
-    audioRef.current.onended = () => {
-        playNextVerse();
-    };
-
-  }, [playingVerse, isPlaying, settings.selectedReciter]);
+  }, [playingVerse, isPlaying, settings.selectedReciter, surah.id]);
 
   const togglePlay = () => {
+      if (audioError) {
+          // Retry logic: try to play again or reset
+          setAudioError(false);
+      }
+
       if (!playingVerse) {
           // If nothing is playing, start from the first visible verse
           const firstVerse = settings.readingMode === 'mushaf' 
@@ -113,52 +136,67 @@ const QuranReader: React.FC<QuranReaderProps> = ({ settings, goBack, surah, init
   };
 
   const playNextVerse = () => {
-      if (!playingVerse) return;
+      // Need current state of playingVerse. 
+      // Since this is called from event listener, we rely on React state updates or pass params.
+      // However, closure might be stale in event listener if not handled carefully.
+      // The useEffect dependency handles re-attaching listener or we use a ref/wrapper.
+      // Actually, relying on state inside useEffect is tricky if dependencies change.
+      // But here we call playNextVerse from a stable function reference if possible?
+      // Simplified: We call it from useEffect, but we need the LATEST playingVerse.
+      // We will access playingVerse from state directly in the function scope (render scope),
+      // BUT `onended` is attached in useEffect [].
+      // FIX: Move `playNextVerse` logic inside useEffect or use a Ref for current verse.
+  };
+  
+  // Re-implement playNext/Prev using a ref to access latest state in callbacks or just use state setters
+  // But wait, playNextVerse depends on `playingVerse` state.
+  
+  // Ref to hold current playing verse for the 'ended' event listener
+  const playingVerseRef = useRef<Verse | null>(null);
+  useEffect(() => { playingVerseRef.current = playingVerse; }, [playingVerse]);
 
-      let nextVerse: Verse | undefined;
-
+  // Ref to hold verses list for navigation
+  const versesRef = useRef<Verse[]>([]);
+  useEffect(() => {
       if (settings.readingMode === 'mushaf' && pageMetadata) {
-          const currentIndex = pageMetadata.ayahs.findIndex(v => v.id === playingVerse.id);
-          if (currentIndex !== -1 && currentIndex < pageMetadata.ayahs.length - 1) {
-              nextVerse = pageMetadata.ayahs[currentIndex + 1];
-          } else {
-              // End of page in Mushaf mode
-              // Ideally, we auto-flip page here. For now, stop or pause.
-              setIsPlaying(false);
-          }
+          versesRef.current = pageMetadata.ayahs;
       } else {
-          const currentIndex = verses.findIndex(v => v.id === playingVerse.id);
-          if (currentIndex !== -1 && currentIndex < verses.length - 1) {
-              nextVerse = verses[currentIndex + 1];
-          }
+          versesRef.current = verses;
       }
+  }, [pageMetadata, verses, settings.readingMode]);
 
-      if (nextVerse) {
-          setPlayingVerse(nextVerse);
+  // Actual navigation logic
+  const navigateVerse = (direction: 'next' | 'prev') => {
+      const current = playingVerseRef.current;
+      if (!current) return;
+
+      const list = versesRef.current;
+      const index = list.findIndex(v => v.id === current.id);
+      
+      if (index === -1) return;
+
+      let nextIndex = direction === 'next' ? index + 1 : index - 1;
+      
+      if (nextIndex >= 0 && nextIndex < list.length) {
+          setPlayingVerse(list[nextIndex]);
+          setIsPlaying(true);
       } else {
+          // End of list/page
           setIsPlaying(false);
       }
   };
 
-  const playPrevVerse = () => {
-      if (!playingVerse) return;
-      
-      let prevVerse: Verse | undefined;
+  // Override the component-scoped functions to use the Ref-based logic for consistent behavior
+  // This `playNextVerse` is called by the `onended` event listener
+  useEffect(() => {
+      if (!audioRef.current) return;
+      audioRef.current.onended = () => navigateVerse('next');
+  }, [pageMetadata, verses]); // Re-bind when list changes
 
-      if (settings.readingMode === 'mushaf' && pageMetadata) {
-          const currentIndex = pageMetadata.ayahs.findIndex(v => v.id === playingVerse.id);
-          if (currentIndex > 0) {
-              prevVerse = pageMetadata.ayahs[currentIndex - 1];
-          }
-      } else {
-          const currentIndex = verses.findIndex(v => v.id === playingVerse.id);
-          if (currentIndex > 0) {
-              prevVerse = verses[currentIndex - 1];
-          }
-      }
+  // UI Button Handlers
+  const handleNextClick = () => navigateVerse('next');
+  const handlePrevClick = () => navigateVerse('prev');
 
-      if (prevVerse) setPlayingVerse(prevVerse);
-  };
   // --- End Audio Logic ---
 
 
@@ -370,7 +408,6 @@ const QuranReader: React.FC<QuranReaderProps> = ({ settings, goBack, surah, init
   const processVerseText = (text: string, isFirst: boolean, surahId?: number) => {
       if (isFirst && surahId !== 1 && surahId !== 9) {
           // Remove Basmalah with various potential tashkeel configurations
-          // Note: The sequence of tashkeel can vary (Shadda+Fatha vs Fatha+Shadda)
           const patterns = [
               /^بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ\s?/,
               /^بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ\s?/,
@@ -609,18 +646,18 @@ const QuranReader: React.FC<QuranReaderProps> = ({ settings, goBack, surah, init
 
              {/* Controls */}
              <div className="flex items-center gap-4 ltr">
-                 <button onClick={playPrevVerse} disabled={!playingVerse} className="p-2 text-gray-500 hover:text-emerald-600 disabled:opacity-30">
+                 <button onClick={handlePrevClick} disabled={!playingVerse} className="p-2 text-gray-500 hover:text-emerald-600 disabled:opacity-30">
                      <SkipBack size={20} className="transform rotate-180" /> {/* RTL adjustment */}
                  </button>
 
                  <button 
                     onClick={togglePlay}
-                    className="w-12 h-12 flex items-center justify-center bg-emerald-600 text-white rounded-full shadow-lg hover:bg-emerald-700 active:scale-95 transition-all"
+                    className={`w-12 h-12 flex items-center justify-center text-white rounded-full shadow-lg active:scale-95 transition-all ${audioError ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                  >
-                     {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
+                     {audioError ? <AlertCircle size={24} /> : (isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />)}
                  </button>
 
-                 <button onClick={playNextVerse} disabled={!playingVerse} className="p-2 text-gray-500 hover:text-emerald-600 disabled:opacity-30">
+                 <button onClick={handleNextClick} disabled={!playingVerse} className="p-2 text-gray-500 hover:text-emerald-600 disabled:opacity-30">
                      <SkipForward size={20} className="transform rotate-180" /> {/* RTL adjustment */}
                  </button>
              </div>
