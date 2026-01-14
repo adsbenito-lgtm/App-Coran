@@ -106,6 +106,16 @@
       .dark .book-spine-shadow {
         background: linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 20%);
       }
+
+      /* Compass Animation */
+      @keyframes compass-float {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(3deg); }
+        75% { transform: rotate(-3deg); }
+      }
+      .animate-compass-float {
+        animation: compass-float 4s ease-in-out infinite;
+      }
     </style>
   <script type="importmap">
 {

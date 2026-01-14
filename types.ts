@@ -28,6 +28,7 @@ export interface Story {
   id: number;
   title: string;
   content: string;
+  source?: string; // Quranic references
   videoUrl?: string; // Placeholder for video
 }
 
@@ -71,6 +72,7 @@ export interface PrayerTimesData {
       day: string;
       month: {
         ar: string;
+        number: number;
       };
       year: string;
       weekday: {
@@ -79,9 +81,17 @@ export interface PrayerTimesData {
     };
     gregorian: {
       date: string;
+      weekday: {
+        en: string;
+      };
+      month: {
+        en: string;
+      }
     }
   };
   meta: {
+      latitude: number;
+      longitude: number;
       timezone: string;
   };
 }
@@ -101,6 +111,7 @@ export interface AppSettings {
   verseNumberStyle: VerseNumberStyle;
   selectedTafseer: TafseerId;
   selectedReciter: string; // ID of the selected reciter
+  numeralSystem: 'latin' | 'arabic'; // 'latin' = 123, 'arabic' = ١٢٣
 }
 
 export enum Tab {
@@ -108,6 +119,6 @@ export enum Tab {
   QURAN = 'QURAN',
   STORIES = 'STORIES',
   AZKAR = 'AZKAR',
-  BOOKS = 'BOOKS',
+  PRAYER = 'PRAYER',
   SETTINGS = 'SETTINGS',
 }

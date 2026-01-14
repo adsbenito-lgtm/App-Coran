@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Tab, AppSettings } from '../types';
-import { BookOpen, Home, Layers, Settings, Moon, Library } from 'lucide-react';
+import { BookOpen, Home, Layers, Settings, Moon, Compass } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -32,10 +33,10 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, sett
             label="القرآن" 
           />
           <NavButton 
-            active={activeTab === Tab.BOOKS} 
-            onClick={() => setActiveTab(Tab.BOOKS)} 
-            icon={<Library size={22} />} 
-            label="المكتبة" 
+            active={activeTab === Tab.PRAYER} 
+            onClick={() => setActiveTab(Tab.PRAYER)} 
+            icon={<Compass size={22} />} 
+            label="المواقيت" 
           />
           <NavButton 
             active={activeTab === Tab.STORIES} 

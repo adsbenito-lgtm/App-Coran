@@ -11,7 +11,6 @@ export const fetchPrayerTimes = async (lat: number | null, lng: number | null): 
     const longitude = lng || DEFAULT_LNG;
     
     // Method 4 is Umm Al-Qura University, Makkah (common standard)
-    // We fetch for the current timestamp
     const timestamp = Math.floor(Date.now() / 1000);
     const url = `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${latitude}&longitude=${longitude}&method=4`;
     
@@ -29,9 +28,32 @@ export const fetchPrayerTimes = async (lat: number | null, lng: number | null): 
   }
 };
 
+export const fetchMonthlyPrayerCalendar = async (lat: number | null, lng: number | null, month: number, year: number): Promise<PrayerTimesData[]> => {
+    try {
+        const latitude = lat || DEFAULT_LAT;
+        const longitude = lng || DEFAULT_LNG;
+        
+        const url = `https://api.aladhan.com/v1/calendar?latitude=${latitude}&longitude=${longitude}&method=4&month=${month}&year=${year}`;
+        
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch calendar');
+        
+        const data = await response.json();
+        if (data.code === 200 && data.data) {
+          return data.data;
+        }
+        return [];
+    } catch (error) {
+        console.error("Calendar API Error:", error);
+        return [];
+    }
+};
+
 export const formatTime12H = (time24: string): string => {
     if (!time24) return '';
-    const [hours, minutes] = time24.split(':');
+    // Handle edge case where time might have (EST) or timezone info
+    const cleanTime = time24.split(' ')[0]; 
+    const [hours, minutes] = cleanTime.split(':');
     const h = parseInt(hours, 10);
     const suffix = h >= 12 ? 'م' : 'ص';
     const adjustedHour = h % 12 || 12;
@@ -44,7 +66,8 @@ export const getNextPrayer = (timings: any): string => {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
     for (const prayer of prayers) {
-        const [h, m] = timings[prayer].split(':');
+        const cleanTime = timings[prayer].split(' ')[0];
+        const [h, m] = cleanTime.split(':');
         const prayerMinutes = parseInt(h) * 60 + parseInt(m);
         
         if (prayerMinutes > currentMinutes) {

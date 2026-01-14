@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { AppSettings, QuranFont, ReadingMode, VerseNumberStyle, TafseerId } from '../types';
-import { Moon, Sun, Type, Monitor, BookOpen, List, Circle, Square, Flower, Book, Mic } from 'lucide-react';
+import { Moon, Sun, Type, Monitor, BookOpen, List, Circle, Square, Flower, Book, Mic, Hash } from 'lucide-react';
 import { RECITERS } from '../services/audioService';
 
 interface SettingsProps {
@@ -47,6 +47,10 @@ const Settings: React.FC<SettingsProps> = ({ settings, setSettings }) => {
       setSettings(prev => ({ ...prev, selectedReciter: e.target.value }));
   };
 
+  const changeNumeralSystem = (system: 'latin' | 'arabic') => {
+      setSettings(prev => ({ ...prev, numeralSystem: system }));
+  };
+
   return (
     <div className="p-4 space-y-6 pb-24">
       <h2 className="text-2xl font-bold mb-4 text-emerald-800 dark:text-emerald-400">الإعدادات</h2>
@@ -70,6 +74,35 @@ const Settings: React.FC<SettingsProps> = ({ settings, setSettings }) => {
             <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.darkMode ? 'translate-x-[-1.25rem]' : 'translate-x-[-0.25rem]'}`} />
           </button>
         </div>
+      </div>
+
+      {/* Numeral System */}
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-indigo-100 dark:bg-indigo-900 rounded-full">
+                  <Hash size={20} className="text-indigo-700 dark:text-indigo-300" />
+              </div>
+              <div>
+                  <h3 className="font-bold">نظام الأرقام</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">اختر شكل الأرقام في التطبيق</p>
+              </div>
+          </div>
+          <div className="flex gap-2">
+              <button 
+                  onClick={() => changeNumeralSystem('latin')}
+                  className={`flex-1 p-3 rounded-lg border flex items-center justify-center gap-2 transition-all ${settings.numeralSystem === 'latin' ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'border-gray-200 dark:border-gray-600 dark:text-gray-300'}`}
+              >
+                  <span className="font-bold font-sans">123</span>
+                  <span className="text-sm">أرقام إنجليزية</span>
+              </button>
+              <button 
+                  onClick={() => changeNumeralSystem('arabic')}
+                  className={`flex-1 p-3 rounded-lg border flex items-center justify-center gap-2 transition-all ${settings.numeralSystem === 'arabic' ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'border-gray-200 dark:border-gray-600 dark:text-gray-300'}`}
+              >
+                  <span className="font-bold font-sans">١٢٣</span>
+                  <span className="text-sm">أرقام عربية</span>
+              </button>
+          </div>
       </div>
 
       {/* Audio Reciter Selection */}

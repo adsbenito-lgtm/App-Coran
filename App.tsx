@@ -5,10 +5,11 @@ import SettingsView from './components/Settings';
 import QuranReader from './components/QuranReader';
 import StoriesView from './components/StoriesView';
 import DuaView from './components/DuaView';
-import BooksView from './components/BooksView';
+import PrayerTimesView from './components/PrayerTimesView';
 import { Tab, AppSettings, Surah, LastReadState, PrayerTimesData } from './types';
-import { Search, Book, Moon, Calendar, ChevronLeft, Clock, BookOpen, Layers, MapPin, Sunrise, Sun, Sunset, CloudMoon } from 'lucide-react';
+import { Search, Book, Moon, Calendar, ChevronLeft, Clock, BookOpen, Layers, MapPin, Sunrise, Sun, Sunset, CloudMoon, Compass, Sparkles } from 'lucide-react';
 import { fetchPrayerTimes, formatTime12H, getNextPrayer } from './services/prayerService';
+import { formatNumber } from './utils/number';
 
 // Full List of 114 Surahs with Start Pages (Madani Mushaf)
 const SURAHS: Surah[] = [
@@ -139,7 +140,8 @@ const App: React.FC = () => {
     readingMode: 'mushaf',
     verseNumberStyle: 'circle',
     selectedTafseer: 'ar.muyassar',
-    selectedReciter: 'alafasy'
+    selectedReciter: 'alafasy',
+    numeralSystem: 'arabic' // Default to Arabic Numerals (١٢٣)
   });
   const [selectedSurah, setSelectedSurah] = useState<Surah | null>(null);
   const [initialPage, setInitialPage] = useState<number>(1);
@@ -285,7 +287,7 @@ const App: React.FC = () => {
            <div className="flex items-center justify-between mb-6">
              <h2 className="text-2xl font-bold text-emerald-800 dark:text-emerald-400">القرآن الكريم</h2>
              <div className="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-3 py-1 rounded-full text-xs font-bold">
-               المصحف الشريف (604 صفحة)
+               المصحف الشريف ({formatNumber(604, settings.numeralSystem)} صفحة)
              </div>
            </div>
            
@@ -317,12 +319,12 @@ const App: React.FC = () => {
                    <div className="flex items-center gap-4">
                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center relative transition-colors ${isLastRead ? 'bg-emerald-100 dark:bg-emerald-800' : 'bg-gray-50 dark:bg-gray-700 group-hover:bg-emerald-50'}`}>
                        <span className={`font-bold font-quran text-lg ${isLastRead ? 'text-emerald-800 dark:text-emerald-100' : 'text-emerald-700 dark:text-emerald-400'}`}>
-                         {surah.id.toLocaleString('ar-EG')}
+                         {formatNumber(surah.id, settings.numeralSystem)}
                        </span>
                      </div>
                      <div className="text-right">
                        <h3 className="font-bold text-lg dark:text-white text-gray-800">{surah.name}</h3>
-                       <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{surah.revelation_place} • {surah.verses_count} آية</p>
+                       <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{surah.revelation_place} • {formatNumber(surah.verses_count, settings.numeralSystem)} آية</p>
                      </div>
                    </div>
                    <div className="text-left flex flex-col items-end">
@@ -330,11 +332,11 @@ const App: React.FC = () => {
                      <div className="flex items-center gap-2">
                         {isLastRead && (
                              <span className="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded animate-pulse">
-                                صفحة {lastRead.pageNumber}
+                                صفحة {formatNumber(lastRead.pageNumber, settings.numeralSystem)}
                              </span>
                         )}
                         <span className="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-gray-500 dark:text-gray-400">
-                          صفحة {surah.startPage}-{endPage}
+                          صفحة {formatNumber(surah.startPage, settings.numeralSystem)}-{formatNumber(endPage, settings.numeralSystem)}
                         </span>
                      </div>
                    </div>
@@ -356,9 +358,9 @@ const App: React.FC = () => {
       return <DuaView settings={settings} />;
     }
     
-    // Books Logic
-    if (activeTab === Tab.BOOKS) {
-      return <BooksView settings={settings} />;
+    // Prayer / Qibla Logic
+    if (activeTab === Tab.PRAYER) {
+      return <PrayerTimesView settings={settings} prayerTimes={prayerTimes} locationName={locationName} />;
     }
 
     // Settings Logic
@@ -375,7 +377,7 @@ const App: React.FC = () => {
             <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-1">
                <Calendar size={14} />
                <span className="text-xs font-bold">
-                   {prayerTimes ? `${prayerTimes.date.hijri.day} ${prayerTimes.date.hijri.month.ar} ${prayerTimes.date.hijri.year}` : 'جاري التحميل...'}
+                   {prayerTimes ? `${formatNumber(prayerTimes.date.hijri.day, settings.numeralSystem)} ${prayerTimes.date.hijri.month.ar} ${formatNumber(prayerTimes.date.hijri.year, settings.numeralSystem)}` : 'جاري التحميل...'}
                </span>
             </div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white font-quran">السلام عليكم</h1>
@@ -414,7 +416,7 @@ const App: React.FC = () => {
                                  </div>
                                  <span className={`text-[10px] font-bold ${isNext ? 'text-emerald-800 dark:text-emerald-300' : 'text-gray-500'}`}>{p.label}</span>
                                  <span className={`text-xs font-bold font-sans ${isNext ? 'text-emerald-700 dark:text-emerald-400' : 'text-gray-800 dark:text-gray-200'}`}>
-                                     {formatTime12H(prayerTimes.timings[p.name])}
+                                     {formatNumber(formatTime12H(prayerTimes.timings[p.name]), settings.numeralSystem)}
                                  </span>
                              </div>
                          )
@@ -440,7 +442,7 @@ const App: React.FC = () => {
 
           <div className="relative p-6 text-white text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-xs font-medium mb-4 border border-white/10">
-              <SparklesIcon />
+              <Sparkles size={16} />
               <span>آية اليوم</span>
             </div>
             
@@ -451,7 +453,7 @@ const App: React.FC = () => {
             <div className="flex items-center justify-center gap-2 text-emerald-200 text-sm font-medium">
               <span>سورة الشرح</span>
               <span className="w-1 h-1 bg-emerald-200 rounded-full"></span>
-              <span>الآية 5</span>
+              <span>الآية {formatNumber(5, settings.numeralSystem)}</span>
             </div>
           </div>
         </div>
@@ -464,7 +466,7 @@ const App: React.FC = () => {
               </div>
               <div className="flex-1 py-3 cursor-pointer" onClick={resumeReading}>
                 <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm mb-1">تابـع القـراءة</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">سورة {lastRead.surahName} • صفحة {lastRead.pageNumber}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">سورة {lastRead.surahName} • صفحة {formatNumber(lastRead.pageNumber, settings.numeralSystem)}</p>
               </div>
               <button onClick={resumeReading} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300 hover:bg-emerald-500 hover:text-white transition-colors">
                 <ChevronLeft size={20} />
@@ -497,11 +499,11 @@ const App: React.FC = () => {
               onClick={() => openSurah(SURAHS[17])} 
             />
             <QuickLinkCard 
-              title="أذكار المساء" 
-              subtitle="حصن المسلم"
-              icon={<Moon className="text-indigo-600" size={20} />}
+              title="المواقيت والقبلة" 
+              subtitle="الصلاة والتقويم"
+              icon={<Compass className="text-indigo-600" size={20} />}
               color="bg-indigo-50 dark:bg-indigo-900/20"
-              onClick={() => setActiveTab(Tab.AZKAR)} 
+              onClick={() => setActiveTab(Tab.PRAYER)} 
             />
             <QuickLinkCard 
               title="قصص الأنبياء" 
@@ -513,7 +515,7 @@ const App: React.FC = () => {
              <QuickLinkCard 
               title="القرآن الكريم" 
               subtitle="المصحف كاملاً"
-              icon={<BookOpenIcon />}
+              icon={<BookOpen className="text-teal-600" size={20} />}
               color="bg-teal-50 dark:bg-teal-900/20"
               onClick={() => setActiveTab(Tab.QURAN)} 
             />
@@ -537,18 +539,10 @@ const QuickLinkCard = ({ title, subtitle, icon, color, onClick }: any) => (
       {icon}
     </div>
     <div>
-      <h4 className="font-bold text-gray-800 dark:text-gray-100">{title}</h4>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{subtitle}</p>
+      <h4 className="font-bold text-gray-800 dark:text-white">{title}</h4>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{subtitle}</p>
     </div>
   </button>
 );
-
-const SparklesIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"/></svg>
-);
-
-const BookOpenIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-teal-600"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-)
 
 export default App;

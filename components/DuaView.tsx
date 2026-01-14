@@ -1,28 +1,184 @@
+
 import React, { useState } from 'react';
 import { Zikr, AzkarCategory, AppSettings } from '../types';
-import { Repeat, CheckCircle } from 'lucide-react';
+import { 
+  Repeat, CheckCircle, ChevronRight, Sun, Moon, Star, 
+  Coffee, Home, MapPin, Utensils, Droplet, Shirt, Heart, 
+  Shield, Smile, Sunrise, Sunset, CloudMoon, BookOpen, 
+  Plane, DoorOpen, Waves, Sparkles, HandHeart, Feather
+} from 'lucide-react';
 
 const MOCK_AZKAR: AzkarCategory[] = [
   {
     id: 1,
     title: "أذكار الصباح",
     items: [
-      { id: 1, text: "أَصْـبَحْنا وَأَصْـبَحَ المُـلْكُ لله وَالحَمدُ لله ، لا إلهَ إلاّ اللّهُ وَحدَهُ لا شَريكَ لهُ...", count: 3 },
-      { id: 2, text: "اللّهُمَّ بِكَ أَصْبَحْنا وَبِكَ أَمْسَينا ، وَبِكَ نَحْيا وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُور.", count: 1 }
+      { id: 101, text: "أَعُوذُ بِاللهِ مِنْ الشَّيْطَانِ الرَّجِيمِ: ﴿اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَن ذَا الَّذِي يَشْفَعُ عِندَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ﴾", count: 1 },
+      { id: 102, text: "بِسْمِ اللهِ الرَّحْمنِ الرَّحِيم: ﴿قُلْ هُوَ اللَّهُ أَحَدٌ ۞ اللَّهُ الصَّمَدُ ۞ لَمْ يَلِدْ وَلَمْ يُولَدْ ۞ وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ﴾\n\nبِسْمِ اللهِ الرَّحْمنِ الرَّحِيم: ﴿قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ۞ مِن شَرِّ مَا خَلَقَ ۞ وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ ۞ وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۞ وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ﴾\n\nبِسْمِ اللهِ الرَّحْمنِ الرَّحِيم: ﴿قُلْ أَعُوذُ بِرَبِّ النَّاسِ ۞ مَلِكِ النَّاسِ ۞ إِلَٰهِ النَّاسِ ۞ مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۞ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ۞ مِنَ الْجِنَّةِ وَالنَّاسِ﴾", count: 3 },
+      { id: 103, text: "أَصْـبَحْنا وَأَصْـبَحَ المُـلْكُ لله وَالحَمدُ لله ، لا إلهَ إلاّ اللّهُ وَحدَهُ لا شَريكَ لهُ، لهُ المُـلْكُ ولهُ الحَمْـد، وهُوَ على كلّ شَيءٍ قدير ، رَبِّ أسْـأَلُـكَ خَـيرَ ما في هـذا اليوم وَخَـيرَ ما بَعْـدَه ، وَأَعـوذُ بِكَ مِنْ شَـرِّ ما في هـذا اليوم وَشَرِّ ما بَعْـدَه، رَبِّ أَعـوذُ بِكَ مِنَ الْكَسَـلِ وَسـوءِ الْكِـبَر ، رَبِّ أَعـوذُ بِكَ مِنْ عَـذابٍ في النّـارِ وَعَـذابٍ في القَـبْر.", count: 1 },
+      { id: 104, text: "اللّهُمَّ بِكَ أَصْبَحْنا وَبِكَ أَمْسَينا ، وَبِكَ نَحْيا وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُور.", count: 1 },
+      { id: 105, text: "اللّهُمَّ إِنِّـي أَصْبَـحْتُ أُشْـهِدُك ، وَأُشْـهِدُ حَمَلَـةَ عَـرْشِـك ، وَمَلائِكَتِك ، وَجَمـيعَ خَلْـقِك ، أَنَّـكَ أَنْـتَ اللهُ لا إلهَ إلاّ أَنْـتَ وَحْـدَكَ لا شَريكَ لَـك ، وَأَنَّ ُ مُحَمّـداً عَبْـدُكَ وَرَسـولُـك.", count: 4 },
+      { id: 106, text: "اللّهُمَّ ما أَصْبَـَحَ بي مِـنْ نِعْـمَةٍ أَو بِأَحَـدٍ مِـنْ خَلْـقِك ، فَمِـنْكَ وَحْـدَكَ لا شريكَ لَـك ، فَلَـكَ الْحَمْـدُ وَلَـكَ الشُّكْـر.", count: 1 },
+      { id: 107, text: "اللّهُمَّ عافِـني في بَدَنـي ، اللّهُمَّ عافِـني في سَمْـعي ، اللّهُمَّ عافِـني في بَصَـري ، لا إلهَ إلاّ أَنْـتَ. اللّهُمَّ إِنّـي أَعـوذُ بِكَ مِنَ الْكُـفر ، وَالفَـقْر ، وَأَعـوذُ بِكَ مِنْ عَذابِ القَـبْر ، لا إلهَ إلاّ أَنْـتَ.", count: 3 },
+      { id: 108, text: "حَسْبِـيَ اللّهُ لا إلهَ إلاّ هُوَ عَلَـيهِ تَوَكَّـلتُ وَهُوَ رَبُّ العَرْشِ العَظـيم.", count: 7 },
+      { id: 109, text: "بِسـمِ اللهِ الذي لا يَضُـرُّ مَعَ اسمِـهِ شَيـءٌ في الأرْضِ وَلا في السّمـاءِ وَهـوَ السّمـيعُ العَلـيم.", count: 3 },
+      { id: 110, text: "اللّهُمَّ إِنِّـي أسْـأَلُـكَ العَـفْوَ وَالعـافِـيةَ في الدُّنْـيا وَالآخِـرَة ، اللّهُمَّ إِنِّـي أسْـأَلُـكَ العَـفْوَ وَالعـافِـيةَ في ديني وَدُنْـيايَ وَأهْـلي وَمالـي ، اللّهُمَّ اسْتُـرْ عـوْراتي وَآمِـنْ رَوْعاتـي ، اللّهُمَّ احْفَظْـني مِن بَـينِ يَدَيَّ وَمِن خَلْفـي وَعَن يَمـيني وَعَن شِمـالي ، وَمِن فَوْقـي ، وَأَعـوذُ بِعَظَمَـتِكَ أَن أُغْـتالَ مِن تَحْتـي.", count: 1 },
+      { id: 111, text: "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ أَصْلِحْ لِي شَأْنِي كُلَّهُ وَلَا تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ.", count: 3 },
+      { id: 112, text: "أَصْبَـحْـنا وَأَصْبَـحْ المُـلكُ للهِ رَبِّ العـالَمـين ، اللّهُمَّ إِنِّـي أسْـأَلُـكَ خَـيْرَ هـذا الـيَوْم ، فَـتْحَهُ ، وَنَصْـرَهُ ، وَنـورَهُ وَبَـرَكَتَـهُ ، وَهُـداهُ ، وَأَعـوذُ بِـكَ مِـنْ شَـرِّ ما فـيهِ وَشَـرِّ ما بَعْـدَه.", count: 1 },
+      { id: 113, text: "سُبْحـانَ اللهِ وَبِحَمْـدِهِ عَدَدَ خَلْـقِه ، وَرِضـا نَفْسِـه ، وَزِنَـةَ عَـرْشِـه ، وَمِـدادَ كَلِمـاتِـه.", count: 3 },
+      { id: 114, text: "اللّهُمَّ إِنِّـي أَسْأَلُـكَ عِلْمـاً نافِعـاً ، وَرِزْقـاً طَيِّـباً ، وَعَمَـلاً مُتَقَبَّـلاً.", count: 1 },
+      { id: 115, text: "سُبْحـانَ اللهِ وَبِحَمْـدِهِ.", count: 100 },
+      { id: 116, text: "أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ.", count: 100 }
     ]
   },
   {
     id: 2,
     title: "أذكار المساء",
     items: [
-      { id: 3, text: "أَمْسَيْنا وَأَمْسَى المُـلْكُ لله وَالحَمدُ لله...", count: 3 }
+      { id: 201, text: "أَمْسَيْنا وَأَمْسَى المُـلْكُ لله وَالحَمدُ لله ، لا إلهَ إلاّ اللّهُ وَحدَهُ لا شَريكَ لهُ، لهُ المُـلْكُ ولهُ الحَمْـد، وهُوَ على كلّ شَيءٍ قدير ، رَبِّ أسْـأَلُـكَ خَـيرَ ما في هـذهِ اللَّـيْلَةِ وَخَـيرَ ما بَعْـدَها ، وَأَعـوذُ بِكَ مِنْ شَـرِّ ما في هـذهِ اللَّـيْلَـةِ وَشَرِّ ما بَعْـدَها ، رَبِّ أَعـوذُ بِكَ مِنَ الْكَسَـلِ وَسـوءِ الْكِـبَر ، رَبِّ أَعـوذُ بِكَ مِنْ عَـذابٍ في النّـارِ وَعَـذابٍ في القَـبْر.", count: 1 },
+      { id: 202, text: "اللّهُمَّ بِكَ أَمْسَـينا وَبِكَ أَصْـبَحْنا، وَبِكَ نَحْـيا وَبِكَ نَمُـوتُ وَإِلَـيْكَ الْمَصِير.", count: 1 },
+      { id: 203, text: "أَعـوذُ بِكَلِمـاتِ اللّهِ التّـامّـاتِ مِنْ شَـرِّ ما خَلَـق.", count: 3 },
+      { id: 204, text: "اللّهُمَّ إِنِّـي أَمْسَيْتُ أُشْـهِدُك ، وَأُشْـهِدُ حَمَلَـةَ عَـرْشِـك ، وَمَلائِكَتِك ، وَجَمـيعَ خَلْـقِك ، أَنَّـكَ أَنْـتَ اللهُ لا إلهَ إلاّ أَنْـتَ وَحْـدَكَ لا شَريكَ لَـك ، وَأَنَّ ُ مُحَمّـداً عَبْـدُكَ وَرَسـولُـك.", count: 4 },
+      { id: 205, text: "اللّهُمَّ ما أَمْسَى بي مِـنْ نِعْـمَةٍ أَو بِأَحَـدٍ مِـنْ خَلْـقِك ، فَمِـنْكَ وَحْـدَكَ لا شريكَ لَـك ، فَلَـكَ الْحَمْـدُ وَلَـكَ الشُّكْـر.", count: 1 },
+      { id: 206, text: "حَسْبِـيَ اللّهُ لا إلهَ إلاّ هُوَ عَلَـيهِ تَوَكَّـلتُ وَهُوَ رَبُّ العَرْشِ العَظـيم.", count: 7 },
+      { id: 207, text: "بِسـمِ اللهِ الذي لا يَضُـرُّ مَعَ اسمِـهِ شَيـءٌ في الأرْضِ وَلا في السّمـاءِ وَهـوَ السّمـيعُ العَلـيم.", count: 3 },
+      { id: 208, text: "رَضيـتُ بِاللهِ رَبَّـاً وَبِالإسْلامِ ديـناً وَبِمُحَـمَّدٍ صلى الله عليه وسلم نَبِيّـاً.", count: 3 },
+      { id: 209, text: "سُبْحـانَ اللهِ وَبِحَمْـدِهِ.", count: 100 },
+      { id: 210, text: "لا إلهَ إلاّ اللّهُ وَحْـدَهُ لا شَـريكَ له، لهُ المُلـكُ ولهُ الحَمـد، وهوَ على كلّ شيءٍ قدير.", count: 10 }
     ]
   },
   {
     id: 3,
+    title: "أذكار النوم",
+    items: [
+      { id: 301, text: "يجمع كفيه ثم ينفث فيهما ويقرأ:\n﴿قُلْ هُوَ اللَّهُ أَحَدٌ ۞ اللَّهُ الصَّمَدُ ۞ لَمْ يَلِدْ وَلَمْ يُولَدْ ۞ وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ﴾\n﴿قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ۞ مِن شَرِّ مَا خَلَقَ ۞ وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ ۞ وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۞ وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ﴾\n﴿قُلْ أَعُوذُ بِرَبِّ النَّاسِ ۞ مَلِكِ النَّاسِ ۞ إِلَٰهِ النَّاسِ ۞ مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۞ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ۞ مِنَ الْجِنَّةِ وَالنَّاسِ﴾\n(ثم يمسح بهما ما استطاع من جسده يبدأ بهما على رأسه ووجهه وما أقبل من جسده)", count: 3 },
+      { id: 302, text: "آية الكرسي: ﴿اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَن ذَا الَّذِي يَشْفَعُ عِندَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ﴾", count: 1 },
+      { id: 303, text: "بِاسْمِكَ رَبِّـي وَضَعْـتُ جَنْـبي ، وَبِكَ أَرْفَعُـه، فَإِن أَمْسَـكْتَ نَفْسـي فارْحَـمْها ، وَإِنْ أَرْسَلْتَـها فاحْفَظْـها بِما تَحْفَـظُ بِه عِبـادَكَ الصّـالِحـين.", count: 1 },
+      { id: 304, text: "اللّهُمَّ إِنَّـكَ خَلَـقْتَ نَفْسـي وَأَنْـتَ تَوَفّـاها لَكَ ممَـاتُـها وَمَحْـياها ، إِنْ أَحْيَيْـتَها فاحْفَظْـها ، وَإِنْ أَمَتَّـها فاغْفِـرْ لَـها . اللّهُمَّ إِنَّـي أَسْـأَلُـكَ العـافِـيَة.", count: 1 },
+      { id: 305, text: "اللّهُمَّ قِنـي عَذابَـكَ يَـوْمَ تَبْـعَثُ عِبـادَك.", count: 3 },
+      { id: 306, text: "بِاسْـمِكَ اللّهُـمَّ أَمـوتُ وَأَحْـيا.", count: 1 },
+      { id: 307, text: "سُبْحَانَ اللَّهِ (33 مرة)، وَالْحَمْدُ لِلَّهِ (33 مرة)، وَاللَّهُ أَكْبَرُ (34 مرة).", count: 1 },
+      { id: 308, text: "اللَّهُمَّ أَسْلَمْتُ نَفْسِي إِلَيْكَ، وَفَوَّضْتُ أَمْرِي إِلَيْكَ، وَأَلْجَأْتُ ظَهْرِي إِلَيْكَ، رَغْبَةً وَرَهْبَةً إِلَيْكَ، لاَ مَلْجَأَ وَلاَ مَنْجَا مِنْكَ إِلاَّ إِلَيْكَ، آمَنْتُ بِكِتَابِكَ الَّذِي أَنْزَلْتَ، وَبِنَبِيِّكَ الَّذِي أَرْسَلْتَ.", count: 1 }
+    ]
+  },
+  {
+    id: 4,
+    title: "أذكار الاستيقاظ",
+    items: [
+      { id: 401, text: "الْحَمْدُ للهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ.", count: 1 },
+      { id: 402, text: "لا إلهَ إلاّ اللّهُ وَحْـدَهُ لا شَـريكَ له، لهُ المُلـكُ ولهُ الحَمـد، وهوَ على كلّ شيءٍ قدير ، سُبْـحانَ اللهِ ، وَالحَمْـدُ لله ، وَلا إلهَ إلاّ اللهُ واللهُ أكْبَـر ، وَلا حَولَ وَلا قوّة إلاّ باللهِ العليّ العظيم. رَبِّ اغْفرْ لي.", count: 1 },
+      { id: 403, text: "الْحَمْدُ لِلَّهِ الَّذِي عَافَانِي فِي جَسَدِي، وَرَدَّ عَلَيَّ رُوحِي، وَأَذِنَ لِي بِذِكْرِهِ.", count: 1 }
+    ]
+  },
+  {
+    id: 5,
+    title: "أذكار الصلاة",
+    items: [
+      { id: 501, text: "دعاء الاستفتاح: سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، وَتَبَارَكَ اسْمُكَ، وَتَعَالَى جَدُّكَ، وَلَا إِلَهَ غَيْرُكَ.", count: 1 },
+      { id: 502, text: "أذكار الركوع: سُبْحَانَ رَبِّيَ الْعَظِيمِ.", count: 3 },
+      { id: 503, text: "أذكار الرفع من الركوع: سَمِعَ اللَّهُ لِمَنْ حَمِدَهُ... رَبَّنَا وَلَكَ الْحَمْدُ حَمْداً كَثِيراً طَيِّباً مُبَارَكاً فِيهِ.", count: 1 },
+      { id: 504, text: "أذكار السجود: سُبْحَانَ رَبِّيَ الأَعْلَى.", count: 3 },
+      { id: 505, text: "بين السجدتين: رَبِّ اغْفِرْ لِي، رَبِّ اغْفِرْ لِي.", count: 1 },
+      { id: 506, text: "التشهد: التَّحِيَّاتُ لِلَّهِ وَالصَّلَوَاتُ وَالطَّيِّبَاتُ، السَّلامُ عَلَيْكَ أَيُّهَا النَّبِيُّ وَرَحْمَةُ اللَّهِ وَبَرَكَاتُهُ، السَّلامُ عَلَيْنَا وَعَلَى عِبَادِ اللَّهِ الصَّالِحِينَ، أَشْهَدُ أَنْ لا إِلَهَ إِلا اللَّهُ وَأَشْهَدُ أَنَّ مُحَمَّدًا عَبْدُهُ وَرَسُولُهُ. اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ، اللَّهُمَّ بَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ كَمَا بَارَكْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ.", count: 1 },
+      { id: 507, text: "بعد السلام: أَسْتَغْفِرُ اللهَ (ثلاثاً). اللّهُمَّ أَنْـتَ السَّلامُ ، وَمِـنْكَ السَّلام ، تَبارَكْتَ يا ذا الجَـلالِ وَالإِكْـرام.", count: 1 },
+      { id: 508, text: "سُبْحَانَ اللهِ (33 مرة)، الْحَمْدُ للهِ (33 مرة)، اللهُ أَكْبَرُ (33 مرة)، لَا إِلَهَ إِلَّا اللهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ (مرة واحدة تمام المائة).", count: 1 },
+      { id: 509, text: "آية الكرسي والمعوذات:\n﴿اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَن ذَا الَّذِي يَشْفَعُ عِندَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ﴾\n\nبِسْمِ اللهِ الرَّحْمنِ الرَّحِيم: ﴿قُلْ هُوَ اللَّهُ أَحَدٌ ۞ اللَّهُ الصَّمَدُ ۞ لَمْ يَلِدْ وَلَمْ يُولَدْ ۞ وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ﴾\n\nبِسْمِ اللهِ الرَّحْمنِ الرَّحِيم: ﴿قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ۞ مِن شَرِّ مَا خَلَقَ ۞ وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ ۞ وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۞ وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ﴾\n\nبِسْمِ اللهِ الرَّحْمنِ الرَّحِيم: ﴿قُلْ أَعُوذُ بِرَبِّ النَّاسِ ۞ مَلِكِ النَّاسِ ۞ إِلَٰهِ النَّاسِ ۞ مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۞ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ۞ مِنَ الْجِنَّةِ وَالنَّاسِ﴾", count: 1 }
+    ]
+  },
+  {
+    id: 6,
+    title: "أذكار الوضوء",
+    items: [
+      { id: 601, text: "بِسْمِ ٱللَّهِ.", count: 1 },
+      { id: 602, text: "أَشْهَدُ أَنْ لاَ إِلَهَ إِلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ وَأَشْهَدُ أَنَّ مُحَمَّداً عَبْدُهُ وَرَسُولُهُ..", count: 1 },
+      { id: 603, text: "اللَّهُمَّ اجْعَلْنِي مِنَ التَّوَّابِينَ وَاجْعَلْنِي مِنَ الْمُتَطَهِّرِينَ.", count: 1 },
+      { id: 604, text: "سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، أَشْهَدُ أَنْ لاَ إِلَهَ إِلاَّ أَنْتَ، أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْكَ.", count: 1 }
+    ]
+  },
+  {
+    id: 7,
+    title: "أذكار المسجد",
+    items: [
+      { id: 701, text: "الذهاب للمسجد: اللَّهُمَّ اجْعَلْ فِي قَلْبِي نُوراً، وَفِي لِسَانِي نُوراً، وَفِي سَمْعِي نُوراً، وَفِي بَصَرِي نُوراً، وَمِنْ فَوْقِي نُوراً، وَمِنْ تَحْتِي نُوراً، وَعَنْ يَمِينِي نُوراً، وَعَنْ شِمَالِي نُوراً، وَمِنْ أَمَامِي نُوراً، وَمِنْ خَلْفِي نُوراً، وَاجْعَلْ فِي نَفْسِي نُوراً، وَأَعْظِمْ لِي نُوراً، وَعَظِّمْ لِي نُوراً، وَاجْعَلْ لِي نُوراً، وَاجْعَلْنِي نُوراً، اللَّهُمَّ أَعْطِنِي نُوراً، وَاجْعَلْ فِي عَصَبِي نُوراً، وَفِي لَحْمِي نُوراً، وَفِي دَمِي نُوراً، وَفِي شَعْرِي نُوراً، وَفِي بَشَرِي نُوراً.", count: 1 },
+      { id: 702, text: "دخول المسجد: أَعُوذُ بِاللهِ الْعَظِيمِ، وَبِوَجْهِهِ الْكَرِيمِ، وَسُلْطَانِهِ الْقَدِيمِ، مِنَ الشَّيْطَانِ الرَّجِيمِ.. بِسْمِ اللهِ، وَالصَّلَاةُ وَالسَّلَامُ عَلَى رَسُولِ اللهِ.. اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ.", count: 1 },
+      { id: 703, text: "الخروج من المسجد: بِسْمِ اللهِ وَالصَّلَاةُ وَالسَّلَامُ عَلَى رَسُولِ اللهِ، اللَّهُمَّ إِنِّي أَسْأَلُكَ مِنْ فَضْلِكَ، اللَّهُمَّ اعْصِمْنِي مِنَ الشَّيْطَانِ الرَّجِيمِ.", count: 1 }
+    ]
+  },
+  {
+    id: 8,
+    title: "أذكار المنزل",
+    items: [
+      { id: 801, text: "دخول المنزل: بِسْمِ اللهِ وَلَجْنَا، وَبِسْمِ اللهِ خَرَجْنَا، وَعَلَى رَبِّنَا تَوَكَّلْنَا.", count: 1 },
+      { id: 802, text: "الخروج من المنزل: بِسْمِ اللهِ ، تَوَكَّلْـتُ عَلى اللهِ وَلا حَوْلَ وَلا قُـوَّةَ إِلاّ بِالله.", count: 1 },
+      { id: 803, text: "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ أَنْ أَضِلَّ، أَوْ أُضَلَّ، أَوْ أَزِلَّ، أَوْ أُزَلَّ، أَوْ أَظْلِمَ، أَوْ أُظْلَمَ، أَوْ أَجْهَلَ، أَوْ يُجْهَلَ عَلَيَّ.", count: 1 }
+    ]
+  },
+  {
+    id: 9,
+    title: "أذكار الطعام",
+    items: [
+      { id: 901, text: "قبل الطعام: بِسْمِ اللهِ. (فإن نسي: بِسْمِ اللهِ فِي أَوَّلِهِ وَآخِرِهِ).", count: 1 },
+      { id: 902, text: "بعد الطعام: الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنِي هَذَا، وَرَزَقَنِيهِ، مِنْ غَيْرِ حَوْلٍ مِنِّي وَلاَ قُوَّةٍ.", count: 1 },
+      { id: 903, text: "دعاء الضيف لصاحب الطعام: اللَّهُمَّ بَارِكْ لَهُمْ فِيمَا رَزَقْتَهُمْ، وَاغْفِرْ لَهُمْ وَارْحَمْهُمْ.", count: 1 }
+    ]
+  },
+  {
+    id: 10,
+    title: "أذكار اللباس",
+    items: [
+      { id: 1001, text: "لبس الثوب: الْحَمْدُ لِلَّهِ الَّذِي كَسَانِي هَذَا (الثَّوْبَ) وَرَزَقَنِيهِ مِنْ غَيْرِ حَوْلٍ مِنِّي وَلاَ قُوَّةٍ.", count: 1 },
+      { id: 1002, text: "لبس الجديد: اللَّهُمَّ لَكَ الْحَمْدُ أَنْتَ كَسَوْتَنِيهِ، أَسْأَلُكَ مِنْ خَيْرِهِ وَخَيْرِ مَا صُنِعَ لَهُ، وَأَعُوذُ بِكَ مِنْ شَرِّهِ وَشَرِّ مَا صُنِعَ لَهُ.", count: 1 },
+      { id: 1003, text: "خلع الثوب: بِسْمِ ٱللَّهِ.", count: 1 }
+    ]
+  },
+  {
+    id: 11,
+    title: "أذكار السفر",
+    items: [
+      { id: 1101, text: "اللهُ أكْبَر، اللهُ أكْبَر، اللهُ أكْبَر، ﴿سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ * وَإِنَّا إِلَى رَبِّنَا لَمُنْقَلِبُونَ﴾. اللَّهُمَّ إِنَّا نَسْأَلُكَ فِي سَفَرِنَا هَذَا الْبِرَّ وَالتَّقْوَى، وَمِنَ الْعَمَلِ مَا تَرْضَى، اللَّهُمَّ هَوِّنْ عَلَيْنَا سَفَرَنَا هَذَا، وَاطْوِ عَنَّا بُعْدَهُ، اللَّهُمَّ أَنْتَ الصَّاحِبُ فِي السَّفَرِ، وَالْخَلِيفَةُ فِي الْأَهْلِ، اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ وَعْثَاءِ السَّفَرِ، وَكَآبَةِ الْمَنْظَرِ، وَسُوءِ الْمُنْقَلَبِ فِي الْمَالِ وَالْأَهْلِ.", count: 1 },
+      { id: 1102, text: "دعاء دخول القرية أو البلدة: اللَّهُمَّ رَبَّ السَّمَوَاتِ السَّبْعِ وَمَا أَظْلَلْنَ، وَرَبَّ الأَرَضِينِ السَّبْعِ وَمَا أَقْلَلْنَ، وَرَبَّ الشَّيَاطِينِ وَمَا أَضْلَلْنَ، وَرَبَّ الرِّيَاحِ وَمَا ذَرَيْنَ، أَسْأَلُكَ خَيْرَ هَذِهِ الْقَرْيَةِ وَخَيْرَ أَهْلِهَا، وَخَيْرَ مَا فِيهَا، وَأَعُوذُ بِكَ مِنْ شَرِّهَا وَشَرِّ أَهْلِهَا، وَشَرِّ مَا فِيهَا.", count: 1 },
+      { id: 1103, text: "دعاء المسافر للمقيم: أَسْتَوْدِعُكُمُ اللَّهَ الَّذِي لاَ تَضِيعُ وَدَائِعُهُ.", count: 1 }
+    ]
+  },
+  {
+    id: 12,
+    title: "الهم والحزن",
+    items: [
+      { id: 1201, text: "اللَّهُمَّ إِنِّي عَبْدُكَ، ابْنُ عَبْدِكَ، ابْنُ أَمَتِكَ، نَاصِيَتِي بِيَدِكَ، مَاضٍ فِيَّ حُكْمُكَ، عَدْلٌ فِيَّ قَضَاؤُكَ، أَسْأَلُكَ بِكُلِّ اسْمٍ هُوَ لَكَ سَمَّيْتَ بِهِ نَفْسَكَ، أَوْ أَنْزَلْتَهُ فِي كِتَابِكَ، أَوْ عَلَّمْتَهُ أَحَداً مِنْ خَلْقِكَ، أَوِ اسْتَأْثَرْتَ بِهِ فِي عِلْمِ الْغَيْبِ عِنْدَكَ، أَنْ تَجْعَلَ الْقُرْآنَ رَبِيعَ قَلْبِي، وَنُورَ صَدْرِي، وَجَلاَءَ حُزْنِي، وَذَهَابَ هَمِّي.", count: 1 },
+      { id: 1202, text: "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَالْعَجْزِ وَالْكَسَلِ، وَالْبُخْلِ وَالْجُبْنِ، وَضَلَعِ الدَّيْنِ وَغَلَبَةِ الرِّجَالِ.", count: 1 }
+    ]
+  },
+  {
+    id: 13,
     title: "أدعية قرآنية",
     items: [
-        { id: 4, text: "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ", count: 1}
+        { id: 1301, text: "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ", count: 1},
+        { id: 1302, text: "رَبَّنَا لاَ تُؤَاخِذْنَا إِن نَّسِينَا أَوْ أَخْطَأْنَا", count: 1},
+        { id: 1303, text: "رَبَّنَا وَلاَ تُحَمِّلْنَا مَا لاَ طَاقَةَ لَنَا بِهِ", count: 1},
+        { id: 1304, text: "رَبِّ اشْرَحْ لِي صَدْرِي * وَيَسِّرْ لِي أَمْرِي", count: 1},
+        { id: 1305, text: "رَبِّ إِنِّي ظَلَمْتُ نَفْسِي فَاغْفِرْ لِي", count: 1}
+    ]
+  },
+  {
+    id: 14,
+    title: "أدعية نبوية",
+    items: [
+        { id: 1401, text: "اللَّهُمَّ أَصْلِحْ لِي دِينِي الَّذِي هُوَ عِصْمَةُ أَمْرِي، وَأَصْلِحْ لِي دُنْيَايَ الَّتِي فِيهَا مَعَاشِي، وَأَصْلِحْ لِي آخِرَتِي الَّتِي فِيهَا مَعَادِي، وَاجْعَلِ الْحَيَاةَ زِيَادَةً لِي فِي كُلِّ خَيْرٍ، وَاجْعَلِ الْمَوْتَ رَاحَةً لِي مِنْ كُلِّ شَرٍّ.", count: 1},
+        { id: 1402, text: "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْهُدَى، وَالتُّقَى، وَالْعَفَافَ، وَالْغِنَى.", count: 1},
+        { id: 1403, text: "يَا مُقَلِّبَ الْقُلُوبِ ثَبِّتْ قَلْبِي عَلَى دِينِكَ.", count: 1}
+    ]
+  },
+  {
+    id: 15,
+    title: "الرقية الشرعية",
+    items: [
+        { id: 1501, text: "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ ﴿ٱلۡحَمۡدُ لِلَّهِ رَبِّ ٱلۡعَٰلَمِينَ ۞ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ ۞ مَٰلِكِ يَوۡمِ ٱلدِّينِ ۞ إِيَّاكَ نَعۡبُدُ وَإِيَّاكَ نَسۡتَعِينُ ۞ ٱهۡدِنَا ٱلصِّرَٰطَ ٱلۡمُسۡتَقِيمَ ۞ صِرَٰطَ ٱلَّذِينَ أَنۡعَمۡتَ عَلَيۡهِمۡ غَيۡرِ ٱلۡمَغۡضُوبِ عَلَيۡهِمۡ وَلَا ٱلضَّالِّينَ﴾", count: 7 },
+        { id: 1502, text: "آية الكرسي: ﴿اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَن ذَا الَّذِي يَشْفَعُ عِندَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ﴾", count: 1 },
+        { id: 1503, text: "أواخر سورة البقرة: ﴿آمَنَ الرَّسُولُ بِمَا أُنزِلَ إِلَيْهِ مِن رَّبِّهِ وَالْمُؤْمِنُونَ ۚ كُلٌّ آمَنَ بِاللَّهِ وَمَلَائِكَتِهِ وَكُتُبِهِ وَرُسُلِهِ لَا نُفَرِّقُ بَيْنَ أَحَدٍ مِّن رُّسُلِهِ ۚ وَقَالُوا سَمِعْنَا وَأَطَعْنَا ۖ غُفْرَانَكَ رَبَّنَا وَإِلَيْكَ الْمَصِيرُ ۞ لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا ۚ لَهَا مَا كَسَبَتْ وَعَلَيْهَا مَا اكْتَسَبَتْ ۗ رَبَّنَا لَا تُؤَاخِذْنَا إِن نَّسِينَا أَوْ أَخْطَأْنَا ۚ رَبَّنَا وَلَا تَحْمِلْ عَلَيْنَا إِصْرًا كَمَا حَمَلْتَهُ عَلَى الَّذِينَ مِن قَبْلِنَا ۚ رَبَّنَا وَلَا تُحَمِّلْنَا مَا لَا طَاقَةَ لَنَا بِهِ ۖ وَاعْفُ عَنَّا وَاغْفِرْ لَنَا وَارْحَمْنَا ۚ أَنتَ مَوْلَانَا فَانصُرْنَا عَلَى الْقَوْمِ الْكَافِرِينَ﴾", count: 1 },
+        { id: 1504, text: "بِسْمِ اللهِ الرَّحْمنِ الرَّحِيم: ﴿قُلْ هُوَ اللَّهُ أَحَدٌ ۞ اللَّهُ الصَّمَدُ ۞ لَمْ يَلِدْ وَلَمْ يُولَدْ ۞ وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ﴾\n\nبِسْمِ اللهِ الرَّحْمنِ الرَّحِيم: ﴿قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ۞ مِن شَرِّ مَا خَلَقَ ۞ وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ ۞ وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۞ وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ﴾\n\nبِسْمِ اللهِ الرَّحْمنِ الرَّحِيم: ﴿قُلْ أَعُوذُ بِرَبِّ النَّاسِ ۞ مَلِكِ النَّاسِ ۞ إِلَٰهِ النَّاسِ ۞ مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۞ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ۞ مِنَ الْجِنَّةِ وَالنَّاسِ﴾", count: 3 },
+        { id: 1505, text: "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ.", count: 3 },
+        { id: 1506, text: "بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ.", count: 3 },
+        { id: 1507, text: "اللَّهُمَّ رَبَّ النَّاسِ أَذْهِبِ الْبَأْسَ، اشْفِ أَنْتَ الشَّافِي، لَا شِفَاءَ إِلَّا شِفَاؤُكَ، شِفَاءً لَا يُغَادِرُ سَقَماً.", count: 1 }
     ]
   }
 ];
@@ -38,54 +194,136 @@ const DuaView: React.FC<{ settings: AppSettings }> = ({ settings }) => {
             setCounts(prev => ({ ...prev, [key]: current + 1 }));
         }
     };
+    
+    const resetCategoryCounts = (catId: number) => {
+        if(window.confirm("هل تريد إعادة تعيين العدادات لهذه الفئة؟")) {
+             setCounts(prev => {
+                 const newCounts = {...prev};
+                 const categoryItems = MOCK_AZKAR.find(c => c.id === catId)?.items || [];
+                 categoryItems.forEach(item => {
+                     delete newCounts[`${catId}-${item.id}`];
+                 });
+                 return newCounts;
+             });
+        }
+    };
+
+    const getIconForCategory = (title: string) => {
+        if (title.includes("الصباح")) return <Sunrise size={28} className="text-amber-100" />;
+        if (title.includes("المساء")) return <Sunset size={28} className="text-indigo-100" />;
+        if (title.includes("النوم")) return <CloudMoon size={28} className="text-blue-100" />;
+        if (title.includes("الاستيقاظ")) return <Sun size={28} className="text-yellow-100" />;
+        if (title.includes("الصلاة")) return <HandHeart size={28} className="text-emerald-100" />;
+        if (title.includes("المسجد")) return <Moon size={28} className="text-teal-100" />; 
+        if (title.includes("المنزل")) return <DoorOpen size={28} className="text-amber-100" />;
+        if (title.includes("السفر")) return <Plane size={28} className="text-sky-100" />;
+        if (title.includes("الطعام")) return <Utensils size={28} className="text-orange-100" />;
+        if (title.includes("الوضوء")) return <Waves size={28} className="text-cyan-100" />;
+        if (title.includes("اللباس")) return <Shirt size={28} className="text-pink-100" />;
+        if (title.includes("الهم")) return <Heart size={28} className="text-rose-100" />;
+        if (title.includes("الرقية")) return <Shield size={28} className="text-emerald-100" />;
+        if (title.includes("قرآنية")) return <BookOpen size={28} className="text-yellow-100" />;
+        if (title.includes("نبوية")) return <Sparkles size={28} className="text-cyan-100" />;
+        return <Star size={28} className="text-white" />;
+    };
+    
+    const getGradientForCategory = (title: string) => {
+        if (title.includes("الصباح")) return "from-amber-400 to-orange-500 shadow-orange-500/20";
+        if (title.includes("المساء")) return "from-indigo-900 to-slate-800 shadow-indigo-500/20";
+        if (title.includes("النوم")) return "from-slate-800 to-black shadow-slate-500/20";
+        if (title.includes("الاستيقاظ")) return "from-yellow-400 to-amber-500 shadow-yellow-500/20";
+        if (title.includes("الصلاة")) return "from-emerald-600 to-teal-700 shadow-emerald-500/20";
+        if (title.includes("المسجد")) return "from-teal-600 to-emerald-800 shadow-teal-500/20";
+        if (title.includes("المنزل")) return "from-amber-700 to-yellow-800 shadow-amber-500/20";
+        if (title.includes("السفر")) return "from-sky-500 to-blue-600 shadow-blue-500/20";
+        if (title.includes("الطعام")) return "from-orange-600 to-red-600 shadow-orange-500/20";
+        if (title.includes("الوضوء")) return "from-cyan-500 to-blue-500 shadow-cyan-500/20";
+        if (title.includes("اللباس")) return "from-pink-500 to-rose-600 shadow-pink-500/20";
+        if (title.includes("الهم")) return "from-rose-400 to-red-500 shadow-rose-500/20";
+        if (title.includes("الرقية")) return "from-emerald-800 to-teal-900 shadow-emerald-500/20";
+        if (title.includes("قرآنية")) return "from-yellow-600 to-amber-700 shadow-yellow-500/20";
+        if (title.includes("نبوية")) return "from-cyan-600 to-teal-700 shadow-cyan-500/20";
+        return "from-gray-500 to-gray-700";
+    };
 
     if (activeCategory !== null) {
         const category = MOCK_AZKAR.find(c => c.id === activeCategory);
         if (!category) return null;
 
+        const completedCount = category.items.filter(item => (counts[`${category.id}-${item.id}`] || 0) >= item.count).length;
+        const totalItems = category.items.length;
+        const progress = Math.round((completedCount / totalItems) * 100);
+
         return (
-            <div className="pb-24">
-                <div className="sticky top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur z-20 p-4 border-b dark:border-gray-800 flex items-center gap-2">
-                     <button onClick={() => setActiveCategory(null)} className="text-sm font-bold text-emerald-600">
-                        &larr; العودة
+            <div className="pb-24 min-h-screen bg-gray-50 dark:bg-gray-900">
+                <div className="sticky top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md z-20 px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3 shadow-sm">
+                     <button onClick={() => setActiveCategory(null)} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/50 transition-colors">
+                        <ChevronRight size={20} className="transform rotate-180" />
                      </button>
-                     <h2 className="text-lg font-bold flex-1 text-center">{category.title}</h2>
-                     <div className="w-10"></div>
+                     <div className="flex-1">
+                        <h2 className="text-lg font-bold text-gray-800 dark:text-white">{category.title}</h2>
+                        <div className="flex items-center gap-2 mt-1">
+                            <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${progress}%` }}></div>
+                            </div>
+                            <span className="text-xs text-gray-400 font-mono">{completedCount}/{totalItems}</span>
+                        </div>
+                     </div>
+                     <button onClick={() => resetCategoryCounts(category.id)} className="text-xs font-bold text-red-500 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20">
+                         إعادة
+                     </button>
                 </div>
 
-                <div className="p-4 space-y-4">
+                <div className="p-4 space-y-4 max-w-2xl mx-auto animate-fade-in">
                     {category.items.map(zikr => {
                         const key = `${category.id}-${zikr.id}`;
                         const current = counts[key] || 0;
                         const isDone = current >= zikr.count;
-                        const percent = (current / zikr.count) * 100;
+                        const percent = Math.min(100, (current / zikr.count) * 100);
 
                         return (
-                            <div 
+                            <button 
                                 key={zikr.id} 
                                 onClick={() => handleCount(category.id, zikr.id, zikr.count)}
-                                className={`relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border-2 transition-all cursor-pointer select-none ${isDone ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-transparent active:scale-[0.98]'}`}
+                                disabled={isDone}
+                                className={`w-full text-right relative overflow-hidden rounded-2xl p-6 shadow-sm border-2 transition-all duration-200 group
+                                    ${isDone 
+                                        ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800 opacity-80' 
+                                        : 'bg-white dark:bg-gray-800 border-transparent hover:border-emerald-200 dark:hover:border-emerald-700 active:scale-[0.98]'
+                                    }`}
                             >
-                                {/* Progress Bar Background */}
-                                <div 
-                                    className="absolute bottom-0 right-0 h-1 bg-emerald-500 transition-all duration-300"
-                                    style={{ width: `${percent}%` }}
-                                ></div>
+                                {/* Progress Background for Active Item */}
+                                {!isDone && current > 0 && (
+                                    <div 
+                                        className="absolute bottom-0 right-0 h-1.5 bg-emerald-500/20 transition-all duration-300"
+                                        style={{ width: `${percent}%` }}
+                                    ></div>
+                                )}
 
-                                <p 
-                                    className={`text-center font-quran leading-loose mb-6 ${isDone ? 'text-emerald-800 dark:text-emerald-300' : 'text-gray-800 dark:text-gray-100'}`}
-                                    style={{ fontSize: `${18 + settings.fontSize * 2}px` }}
-                                >
-                                    {zikr.text}
-                                </p>
+                                <div className="relative z-10">
+                                    <p 
+                                        className={`font-quran leading-[2.2] mb-6 text-justify whitespace-pre-line ${isDone ? 'text-gray-500 dark:text-gray-400 line-through decoration-emerald-500/30' : 'text-gray-800 dark:text-gray-100'}`}
+                                        style={{ fontSize: `${18 + settings.fontSize * 2}px` }}
+                                    >
+                                        {zikr.text}
+                                    </p>
 
-                                <div className="flex justify-center">
-                                    <div className={`flex items-center gap-2 px-4 py-1 rounded-full text-sm font-bold ${isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}>
-                                        {isDone ? <CheckCircle size={16} /> : <Repeat size={16} />}
-                                        <span>{current} / {zikr.count}</span>
+                                    <div className="flex justify-between items-end">
+                                        <div className={`px-3 py-1 rounded-lg text-xs font-bold ${isDone ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}`}>
+                                            {isDone ? 'اكتمل' : 'التكرار'}
+                                        </div>
+                                        
+                                        <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold shadow-sm transition-all
+                                            ${isDone 
+                                                ? 'bg-emerald-500 text-white' 
+                                                : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white'
+                                            }`}>
+                                            {isDone ? <CheckCircle size={18} /> : <Repeat size={18} />}
+                                            <span className="font-mono">{current} / {zikr.count}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </button>
                         );
                     })}
                 </div>
@@ -94,21 +332,54 @@ const DuaView: React.FC<{ settings: AppSettings }> = ({ settings }) => {
     }
 
     return (
-        <div className="p-4 pb-24">
-            <h2 className="text-2xl font-bold mb-6 text-emerald-800 dark:text-emerald-400">الأذكار والأدعية</h2>
-            <div className="grid grid-cols-1 gap-4">
-                {MOCK_AZKAR.map(cat => (
-                    <button 
-                        key={cat.id} 
-                        onClick={() => setActiveCategory(cat.id)}
-                        className="bg-gradient-to-l from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 text-white p-6 rounded-2xl shadow-lg shadow-emerald-200 dark:shadow-none flex items-center justify-between group transition-all"
-                    >
-                        <span className="text-xl font-bold">{cat.title}</span>
-                        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <span className="font-mono font-bold">{cat.items.length}</span>
-                        </div>
-                    </button>
-                ))}
+        <div className="p-4 pb-24 max-w-3xl mx-auto">
+            <header className="mb-8">
+                <h2 className="text-3xl font-bold text-emerald-900 dark:text-emerald-100 font-quran mb-2">الأذكار والأدعية</h2>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">حصن المسلم: أذكار اليوم والليلة</p>
+            </header>
+            
+            <div className="grid grid-cols-2 gap-4">
+                {MOCK_AZKAR.map(cat => {
+                    const total = cat.items.length;
+                    const completed = cat.items.filter(i => (counts[`${cat.id}-${i.id}`] || 0) >= i.count).length;
+                    const isFullyCompleted = completed === total && total > 0;
+                    
+                    return (
+                        <button 
+                            key={cat.id} 
+                            onClick={() => setActiveCategory(cat.id)}
+                            className={`relative overflow-hidden rounded-2xl p-4 md:p-6 shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group bg-gradient-to-br ${getGradientForCategory(cat.title)} text-white text-right`}
+                        >
+                            {/* Background decoration */}
+                            <div className="absolute top-0 right-0 p-24 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-white/10 transition-colors pointer-events-none"></div>
+                            
+                            <div className="relative z-10 flex flex-col h-full justify-between">
+                                <div className="flex justify-between items-start mb-4">
+                                     <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-white shadow-inner">
+                                        {getIconForCategory(cat.title)}
+                                    </div>
+                                    <div className="flex flex-col items-end gap-1">
+                                         {isFullyCompleted && (
+                                             <div className="bg-white/20 p-1 rounded-full animate-in zoom-in">
+                                                 <CheckCircle size={16} className="text-white" />
+                                             </div>
+                                         )}
+                                         {completed > 0 && !isFullyCompleted && (
+                                             <span className="text-[10px] font-mono font-bold bg-black/20 px-2 py-0.5 rounded-lg">
+                                                 {completed}/{total}
+                                             </span>
+                                         )}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 className="text-lg md:text-xl font-bold mb-1 leading-tight drop-shadow-md">{cat.title}</h3>
+                                    <p className="text-white/80 text-[10px] md:text-xs">{cat.items.length} ذكر</p>
+                                </div>
+                            </div>
+                        </button>
+                    )
+                })}
             </div>
         </div>
     );
