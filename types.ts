@@ -1,3 +1,4 @@
+
 export interface Surah {
   id: number;
   name: string;
@@ -49,19 +50,57 @@ export interface LastReadState {
   timestamp: number;
 }
 
+export interface Reciter {
+  id: string;
+  name: string;
+  subfolder: string; // The folder name in EveryAyah API
+}
+
+export interface PrayerTimesData {
+  timings: {
+    Fajr: string;
+    Sunrise: string;
+    Dhuhr: string;
+    Asr: string;
+    Maghrib: string;
+    Isha: string;
+    [key: string]: string;
+  };
+  date: {
+    hijri: {
+      day: string;
+      month: {
+        ar: string;
+      };
+      year: string;
+      weekday: {
+        ar: string;
+      };
+    };
+    gregorian: {
+      date: string;
+    }
+  };
+  meta: {
+      timezone: string;
+  };
+}
+
 export type QuranFont = 'Amiri' | 'Noto Naskh Arabic' | 'Scheherazade New';
 export type ReadingMode = 'list' | 'mushaf';
 export type VerseNumberStyle = 'circle' | 'square' | 'flower';
-export type TafseerId = 'ar.muyassar' | 'ar.jalalayn' | 'ar.ibnkathir' | 'ar.qurtubi' | 'ar.tabari';
+export type TafseerId = 'ar.muyassar' | 'ar.jalalayn' | 'ar.ibnkathir' | 'ar.qurtubi' | 'ar.tabari' | 'ar.saadi';
 
 export interface AppSettings {
   darkMode: boolean;
   fontSize: number; // 1-5 scale for Quran text
   tafseerFontSize: number; // 1-5 scale for Tafseer text
+  tafseerFontFamily: QuranFont; // Font family for Tafseer text
   fontFamily: QuranFont;
   readingMode: ReadingMode;
   verseNumberStyle: VerseNumberStyle;
   selectedTafseer: TafseerId;
+  selectedReciter: string; // ID of the selected reciter
 }
 
 export enum Tab {

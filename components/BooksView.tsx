@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Upload, FileText, X, AlertCircle, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import { fetchQuranPage } from '../services/quranApi';
@@ -126,6 +127,26 @@ const BooksView: React.FC<BooksViewProps> = ({ settings }) => {
       return `سورة ${name}`;
   };
 
+  // Helper to remove duplicate Basmalah
+  const processVerseText = (text: string, isFirst: boolean, surahId?: number) => {
+      if (isFirst && surahId !== 1 && surahId !== 9) {
+          const patterns = [
+              /^بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ\s?/,
+              /^بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ\s?/,
+              /^بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\s?/ 
+          ];
+          
+          let processed = text;
+          for (const pattern of patterns) {
+              if (pattern.test(processed)) {
+                  return processed.replace(pattern, '').trim();
+              }
+          }
+          return processed;
+      }
+      return text;
+  };
+
   // --- RENDER: READER VIEW ---
   if (activeBook) {
     return (
@@ -163,6 +184,7 @@ const BooksView: React.FC<BooksViewProps> = ({ settings }) => {
                                      const isFirstAyahInSurah = ayah.number === 1;
                                      const showBasmala = isFirstAyahInSurah && ayah.surah?.id !== 1 && ayah.surah?.id !== 9;
                                      const showSurahHeader = isFirstAyahInSurah;
+                                     const displayText = processVerseText(ayah.text, isFirstAyahInSurah, ayah.surah?.id);
                                      
                                      return (
                                          <React.Fragment key={ayah.id}>
@@ -181,7 +203,7 @@ const BooksView: React.FC<BooksViewProps> = ({ settings }) => {
                                              <span 
                                                 className="inline leading-[2.5] text-xl font-quran text-justify text-gray-900 dark:text-gray-100"
                                              >
-                                                {ayah.text} 
+                                                {displayText} 
                                                 {renderVerseNumber(ayah.number)}
                                              </span>
                                          </React.Fragment>

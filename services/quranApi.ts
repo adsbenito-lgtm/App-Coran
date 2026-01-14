@@ -1,55 +1,48 @@
 import { Verse, QuranPage, Surah } from '../types';
+import { OFFLINE_PAGES } from './offlineQuran';
 
-interface ApiVerse {
-  number: number;
-  text: string;
-  numberInSurah: number;
-  juz: number;
-  manzil: number;
-  page: number;
-  ruku: number;
-  hizbQuarter: number;
-  sajda: boolean;
-  surah: {
-    number: number;
-    name: string;
-    englishName: string;
-    englishNameTranslation: string;
-    revelationType: string;
-    numberOfAyahs: number;
-  };
-}
+const tafseerCache: Record<string, Record<number, string>> = {};
 
-// Fetch all verses for a specific Surah
+// ID mapping for Quran.com API (Used as Fallback)
+const QURAN_COM_IDS: Record<string, number> = {
+    'ar.muyassar': 169, // Tafseer Al-Muyassar
+    'ar.jalalayn': 164, // Tafseer Al-Jalalayn
+    'ar.ibnkathir': 165, // Tafseer Ibn Kathir
+    'ar.saadi': 168,     // Tafseer Al-Sa'di
+    'ar.tabari': 160,    // Tafseer Al-Tabari
+    'ar.qurtubi': 167    // Tafseer Al-Qurtubi
+};
+
 export const fetchSurahVerses = async (surahId: number): Promise<Verse[]> => {
   try {
     const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahId}/quran-uthmani`);
+    if (!response.ok) throw new Error("Network");
     const data = await response.json();
-
-    if (data.code === 200 && data.data && data.data.ayahs) {
-      return data.data.ayahs.map((ayah: ApiVerse) => ({
-        id: ayah.number,
-        number: ayah.numberInSurah,
-        text: ayah.text,
-        translation: "",
-        juz: ayah.juz
+    if (data.data?.ayahs) {
+      return data.data.ayahs.map((ayah: any) => ({
+        id: ayah.number, number: ayah.numberInSurah, text: ayah.text, translation: "", juz: ayah.juz
       }));
     }
     return [];
   } catch (error) {
-    console.error("Failed to fetch surah:", error);
-    return [];
+    const offlineVerses: Verse[] = [];
+    Object.values(OFFLINE_PAGES).forEach(pageVerses => {
+        pageVerses.forEach(v => {
+            if (v.surah && v.surah.id === surahId) offlineVerses.push(v);
+        });
+    });
+    return offlineVerses.length > 0 ? offlineVerses.sort((a, b) => a.number - b.number) : [];
   }
 };
 
-// Fetch a specific page (1-604) matching standard Mushaf layout
 export const fetchQuranPage = async (pageNumber: number): Promise<QuranPage | null> => {
+  if (OFFLINE_PAGES[pageNumber]) return constructPageFromOffline(pageNumber, OFFLINE_PAGES[pageNumber]);
   try {
     const response = await fetch(`https://api.alquran.cloud/v1/page/${pageNumber}/quran-uthmani`);
+    if (!response.ok) throw new Error("Network");
     const data = await response.json();
-
-    if (data.code === 200 && data.data && data.data.ayahs) {
-      const ayahs: Verse[] = data.data.ayahs.map((apiAyah: ApiVerse) => ({
+    if (data.data?.ayahs) {
+      const ayahs: Verse[] = data.data.ayahs.map((apiAyah: any) => ({
         id: apiAyah.number,
         number: apiAyah.numberInSurah,
         text: apiAyah.text,
@@ -64,40 +57,95 @@ export const fetchQuranPage = async (pageNumber: number): Promise<QuranPage | nu
             revelation_place: apiAyah.surah.revelationType === 'Meccan' ? 'مكية' : 'مدنية'
         }
       }));
-      
-      // Extract unique surahs on this page for headers
       const surahs: { [key: number]: Surah } = {};
-      ayahs.forEach(ayah => {
-          if (ayah.surah && !surahs[ayah.surah.id]) {
-              surahs[ayah.surah.id] = ayah.surah;
-          }
-      });
-
-      return {
-        number: pageNumber,
-        ayahs,
-        surahs
-      };
+      ayahs.forEach(ayah => { if (ayah.surah && !surahs[ayah.surah.id]) surahs[ayah.surah.id] = ayah.surah; });
+      return { number: pageNumber, ayahs, surahs };
     }
     return null;
-  } catch (error) {
-    console.error("Failed to fetch page:", error);
-    return null;
-  }
+  } catch (error) { return null; }
 };
 
-// Fetch Tafseer for a specific verse
-export const fetchTafseer = async (surahId: number, verseNumber: number, edition: string): Promise<string> => {
-  try {
-    const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surahId}:${verseNumber}/${edition}`);
-    const data = await response.json();
+function constructPageFromOffline(pageNumber: number, verses: Verse[]): QuranPage {
+    const surahs: { [key: number]: Surah } = {};
+    verses.forEach(v => {
+        if (v.surah && !surahs[v.surah.id]) {
+             surahs[v.surah.id] = {
+                 ...v.surah,
+                 name: getSurahNameById(v.surah.id),
+                 englishName: '', transliteration: '', verses_count: 0, revelation_place: '', startPage: 0
+             };
+        }
+    });
+    return { number: pageNumber, ayahs: verses, surahs };
+}
 
-    if (data.code === 200 && data.data && data.data.text) {
-      return data.data.text;
-    }
-    return "عذراً، التفسير غير متوفر لهذه الآية.";
-  } catch (error) {
-    console.error("Failed to fetch tafseer:", error);
-    return "حدث خطأ أثناء تحميل التفسير.";
+function getSurahNameById(id: number): string {
+    const names: Record<number, string> = {
+        1: "الفاتحة", 18: "الكهف", 36: "يس", 67: "الملك", 112: "الإخلاص", 113: "الفلق", 114: "الناس"
+    };
+    return names[id] || `سورة ${id}`;
+}
+
+// Validator to ensure text is primarily Arabic
+function isArabicContent(text: string): boolean {
+    if (!text) return false;
+    const hasArabic = /[\u0600-\u06FF]/.test(text);
+    // Reject if it looks like English text (more than 3 english words sequence)
+    const isEnglish = /[A-Za-z]{3,}\s+[A-Za-z]{3,}\s+[A-Za-z]{3,}/.test(text); 
+    return hasArabic && !isEnglish;
+}
+
+export const fetchTafseer = async (surahId: number, verseNumber: number, edition: string): Promise<string> => {
+  const surahKey = `${edition}:${surahId}`;
+  
+  // 1. Check Memory Cache
+  if (tafseerCache[surahKey] && tafseerCache[surahKey][verseNumber]) {
+      return tafseerCache[surahKey][verseNumber];
   }
+
+  // Helper function to update cache and return
+  const cacheAndReturn = (text: string) => {
+      if (!tafseerCache[surahKey]) tafseerCache[surahKey] = {};
+      tafseerCache[surahKey][verseNumber] = text;
+      return text;
+  };
+
+  // 2. Try AlQuran.Cloud First (Most reliable for Arabic Text: Muyassar, Jalalayn, IbnKathir)
+  // Note: 'ar.saadi' is NOT supported by AlQuran.Cloud, so it will throw error and go to fallback.
+  try {
+      const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surahId}:${verseNumber}/${edition}`);
+      if (response.ok) {
+          const json = await response.json();
+          if (json.status === 'OK' && json.data && json.data.text) {
+             // AlQuran.cloud usually returns clean text
+             return cacheAndReturn(json.data.text);
+          }
+      }
+  } catch (e) {
+      // Ignore and try fallback
+  }
+
+  // 3. Fallback: Quran.com API (Good for Saadi and others if AlQuran.cloud fails)
+  const targetId = QURAN_COM_IDS[edition] || 169;
+  try {
+      // Use "by_ayah" endpoint to get specific verse tafseer
+      const url = `https://api.quran.com/api/v4/tafsirs/${targetId}/by_ayah/${surahId}:${verseNumber}`;
+      const response = await fetch(url);
+      
+      if (response.ok) {
+          const data = await response.json();
+          if (data && data.tafsir && data.tafsir.text) {
+              // Clean HTML tags from Quran.com response
+              const cleanedText = data.tafsir.text.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+              
+              if (isArabicContent(cleanedText)) {
+                  return cacheAndReturn(cleanedText);
+              }
+          }
+      }
+  } catch (e) {
+      console.error("All Tafseer sources failed", e);
+  }
+
+  return "عذراً، التفسير غير متوفر حالياً لهذا الجزء. تأكد من اتصالك بالإنترنت.";
 };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from './components/Layout';
 import SettingsView from './components/Settings';
@@ -5,8 +6,9 @@ import QuranReader from './components/QuranReader';
 import StoriesView from './components/StoriesView';
 import DuaView from './components/DuaView';
 import BooksView from './components/BooksView';
-import { Tab, AppSettings, Surah, LastReadState } from './types';
-import { Search, Book, Moon, Calendar, ChevronLeft, Clock, BookOpen, Layers } from 'lucide-react';
+import { Tab, AppSettings, Surah, LastReadState, PrayerTimesData } from './types';
+import { Search, Book, Moon, Calendar, ChevronLeft, Clock, BookOpen, Layers, MapPin, Sunrise, Sun, Sunset, CloudMoon } from 'lucide-react';
+import { fetchPrayerTimes, formatTime12H, getNextPrayer } from './services/prayerService';
 
 // Full List of 114 Surahs with Start Pages (Madani Mushaf)
 const SURAHS: Surah[] = [
@@ -132,10 +134,12 @@ const App: React.FC = () => {
     darkMode: false, 
     fontSize: 2,
     tafseerFontSize: 3, // Default Tafseer Font Size
+    tafseerFontFamily: 'Amiri', // Default Tafseer Font Family
     fontFamily: 'Amiri',
     readingMode: 'mushaf',
     verseNumberStyle: 'circle',
-    selectedTafseer: 'ar.muyassar'
+    selectedTafseer: 'ar.muyassar',
+    selectedReciter: 'alafasy'
   });
   const [selectedSurah, setSelectedSurah] = useState<Surah | null>(null);
   const [initialPage, setInitialPage] = useState<number>(1);
@@ -144,7 +148,12 @@ const App: React.FC = () => {
   // Last Read Persistence
   const [lastRead, setLastRead] = useState<LastReadState | null>(null);
 
-  // Load from LocalStorage
+  // Prayer Times State
+  const [prayerTimes, setPrayerTimes] = useState<PrayerTimesData | null>(null);
+  const [nextPrayer, setNextPrayer] = useState<string>('');
+  const [locationName, setLocationName] = useState<string>('مكة المكرمة');
+
+  // Load from LocalStorage and Fetch Data
   useEffect(() => {
     const saved = localStorage.getItem('lastRead');
     if (saved) {
@@ -160,6 +169,41 @@ const App: React.FC = () => {
     } else {
       document.documentElement.classList.remove('dark');
     }
+
+    // Fetch Prayer Times
+    const initPrayerTimes = async () => {
+       // Request location
+       if (navigator.geolocation) {
+           navigator.geolocation.getCurrentPosition(
+               async (position) => {
+                   const { latitude, longitude } = position.coords;
+                   setLocationName('موقعي الحالي'); // Or use reverse geocoding if needed
+                   const data = await fetchPrayerTimes(latitude, longitude);
+                   if (data) {
+                       setPrayerTimes(data);
+                       setNextPrayer(getNextPrayer(data.timings));
+                   }
+               },
+               async (error) => {
+                   console.log("Geolocation blocked or failed, defaulting to Mecca");
+                   const data = await fetchPrayerTimes(null, null); // Uses default inside service
+                   if (data) {
+                       setPrayerTimes(data);
+                       setNextPrayer(getNextPrayer(data.timings));
+                   }
+               }
+           );
+       } else {
+           // Fallback if API not supported
+           const data = await fetchPrayerTimes(null, null);
+           if (data) {
+               setPrayerTimes(data);
+               setNextPrayer(getNextPrayer(data.timings));
+           }
+       }
+    };
+    initPrayerTimes();
+
   }, [settings.darkMode]);
 
   const handlePageChange = (page: number, surah: Surah | undefined) => {
@@ -167,12 +211,7 @@ const App: React.FC = () => {
     
     // Find the Surah that contains this page if standard Mushaf
     let actualSurah = surah;
-    // In mushaf mode, 'surah' prop might stay the same even if we flip pages into next surah
-    // For simple persistence, we just use the active surah or try to find surah by page
     const foundSurah = SURAHS.find(s => {
-       // Estimate if page is within this surah's range. 
-       // This logic is approximate for simple "Last Read" display.
-       // Ideally we use the pageMetadata from QuranReader, but here we update basic state
        return page >= s.startPage && (SURAHS[s.id] ? page < SURAHS[s.id].startPage : page <= 604);
     });
 
@@ -190,13 +229,10 @@ const App: React.FC = () => {
   };
 
   const openSurah = (surah: Surah) => {
-    // Logic: If the user was last reading THIS surah (or a page within this surah),
-    // open that page. Otherwise, open the start of the surah.
     let pageToOpen = surah.startPage;
 
     if (lastRead) {
-        // If last read page is within the range of this surah
-        const nextSurah = SURAHS[surah.id]; // SURAHS is 0-indexed, id is 1-indexed. SURAHS[surah.id] is the NEXT surah object.
+        const nextSurah = SURAHS[surah.id];
         const endPage = nextSurah ? nextSurah.startPage - 1 : 604;
         
         if (lastRead.pageNumber >= surah.startPage && lastRead.pageNumber <= endPage) {
@@ -218,7 +254,6 @@ const App: React.FC = () => {
         setActiveTab(Tab.QURAN);
       }
     } else {
-      // Default to Al-Fatiha
       openSurah(SURAHS[0]);
     }
   };
@@ -339,15 +374,58 @@ const App: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-1">
                <Calendar size={14} />
-               <span className="text-xs font-bold">15 رمضان 1446</span>
+               <span className="text-xs font-bold">
+                   {prayerTimes ? `${prayerTimes.date.hijri.day} ${prayerTimes.date.hijri.month.ar} ${prayerTimes.date.hijri.year}` : 'جاري التحميل...'}
+               </span>
             </div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white font-quran">السلام عليكم</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">أتمنى لك يوماً مليئاً بالبركة</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+               <MapPin size={12}/> {locationName}
+            </p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-200 dark:shadow-emerald-900/20 flex items-center justify-center text-white font-bold text-xl font-quran">
             ع
           </div>
         </header>
+
+        {/* Prayer Times Widget */}
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
+             <div className="flex justify-between items-center mb-4 px-2">
+                 <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <Clock size={16} className="text-emerald-500"/> مواقيت الصلاة
+                 </h3>
+                 <span className="text-xs text-gray-400 font-medium">Umm Al-Qura</span>
+             </div>
+             
+             {prayerTimes ? (
+                 <div className="flex justify-between items-center text-center">
+                     {[
+                         { name: 'Fajr', label: 'الفجر', icon: <CloudMoon size={18}/> },
+                         { name: 'Dhuhr', label: 'الظهر', icon: <Sun size={18}/> },
+                         { name: 'Asr', label: 'العصر', icon: <Sun size={18} className="opacity-70"/> },
+                         { name: 'Maghrib', label: 'المغرب', icon: <Sunset size={18}/> },
+                         { name: 'Isha', label: 'العشاء', icon: <Moon size={18}/> }
+                     ].map((p) => {
+                         const isNext = nextPrayer === p.name;
+                         return (
+                             <div key={p.name} className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${isNext ? 'bg-emerald-100 dark:bg-emerald-900/50 scale-105' : ''}`}>
+                                 <div className={`${isNext ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`}>
+                                     {p.icon}
+                                 </div>
+                                 <span className={`text-[10px] font-bold ${isNext ? 'text-emerald-800 dark:text-emerald-300' : 'text-gray-500'}`}>{p.label}</span>
+                                 <span className={`text-xs font-bold font-sans ${isNext ? 'text-emerald-700 dark:text-emerald-400' : 'text-gray-800 dark:text-gray-200'}`}>
+                                     {formatTime12H(prayerTimes.timings[p.name])}
+                                 </span>
+                             </div>
+                         )
+                     })}
+                 </div>
+             ) : (
+                 <div className="flex justify-center py-4">
+                     <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                 </div>
+             )}
+        </div>
 
         {/* Daily Verse Card */}
         <div className="relative group overflow-hidden rounded-3xl">
@@ -466,7 +544,7 @@ const QuickLinkCard = ({ title, subtitle, icon, color, onClick }: any) => (
 );
 
 const SparklesIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"/></svg>
 );
 
 const BookOpenIcon = () => (
