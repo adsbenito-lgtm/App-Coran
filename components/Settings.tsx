@@ -1,8 +1,10 @@
 
+
 import React from 'react';
 import { AppSettings, QuranFont, ReadingMode, VerseNumberStyle, TafseerId } from '../types';
-import { Moon, Sun, Type, Monitor, BookOpen, List, Circle, Square, Flower, Book, Mic, Hash } from 'lucide-react';
+import { Moon, Sun, Type, Monitor, BookOpen, List, Circle, Square, Flower, Book, Mic, Hash, Download } from 'lucide-react';
 import { RECITERS } from '../services/audioService';
+import DownloadsView from './DownloadsView';
 
 interface SettingsProps {
   settings: AppSettings;
@@ -54,6 +56,17 @@ const Settings: React.FC<SettingsProps> = ({ settings, setSettings }) => {
   return (
     <div className="p-4 space-y-6 pb-24">
       <h2 className="text-2xl font-bold mb-4 text-emerald-800 dark:text-emerald-400">الإعدادات</h2>
+
+      {/* Offline Management Section */}
+      <div className="space-y-2">
+         <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+             <Download size={18} className="text-emerald-500" />
+             العمل بدون إنترنت
+         </h3>
+         <DownloadsView settings={settings} />
+      </div>
+
+      <hr className="border-gray-200 dark:border-gray-700" />
 
       {/* Theme Toggle */}
       <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
@@ -163,10 +176,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, setSettings }) => {
           >
               <option value="ar.muyassar">التفسير الميسر (يوصى به)</option>
               <option value="ar.jalalayn">تفسير الجلالين</option>
-              <option value="ar.saadi">تفسير السعدي</option>
-              <option value="ar.ibnkathir">تفسير ابن كثير</option>
               <option value="ar.qurtubi">تفسير القرطبي</option>
-              <option value="ar.tabari">تفسير الطبري</option>
           </select>
           
           <div className="mt-4 border-t border-gray-100 dark:border-gray-700 pt-4">

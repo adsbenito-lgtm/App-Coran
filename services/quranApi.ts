@@ -1,5 +1,7 @@
+
 import { Verse, QuranPage, Surah } from '../types';
 import { OFFLINE_PAGES } from './offlineQuran';
+import { getOfflineSurah, getOfflinePage, getOfflineTafseerText } from './offlineService';
 
 const tafseerCache: Record<string, Record<number, string>> = {};
 
@@ -7,13 +9,15 @@ const tafseerCache: Record<string, Record<number, string>> = {};
 const QURAN_COM_IDS: Record<string, number> = {
     'ar.muyassar': 169, // Tafseer Al-Muyassar
     'ar.jalalayn': 164, // Tafseer Al-Jalalayn
-    'ar.ibnkathir': 165, // Tafseer Ibn Kathir
-    'ar.saadi': 168,     // Tafseer Al-Sa'di
-    'ar.tabari': 160,    // Tafseer Al-Tabari
     'ar.qurtubi': 167    // Tafseer Al-Qurtubi
 };
 
 export const fetchSurahVerses = async (surahId: number): Promise<Verse[]> => {
+  // 1. Check Offline DB (IndexedDB)
+  const localData = await getOfflineSurah(surahId);
+  if (localData) return localData;
+
+  // 2. Fetch API
   try {
     const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahId}/quran-uthmani`);
     if (!response.ok) throw new Error("Network");
@@ -25,6 +29,7 @@ export const fetchSurahVerses = async (surahId: number): Promise<Verse[]> => {
     }
     return [];
   } catch (error) {
+    // 3. Fallback to Partial Offline Data (offlineQuran.ts)
     const offlineVerses: Verse[] = [];
     Object.values(OFFLINE_PAGES).forEach(pageVerses => {
         pageVerses.forEach(v => {
@@ -36,7 +41,14 @@ export const fetchSurahVerses = async (surahId: number): Promise<Verse[]> => {
 };
 
 export const fetchQuranPage = async (pageNumber: number): Promise<QuranPage | null> => {
+  // 1. Check Offline DB
+  const localPage = await getOfflinePage(pageNumber);
+  if (localPage) return localPage;
+
+  // 2. Check Partial Static Data
   if (OFFLINE_PAGES[pageNumber]) return constructPageFromOffline(pageNumber, OFFLINE_PAGES[pageNumber]);
+  
+  // 3. Fetch API
   try {
     const response = await fetch(`https://api.alquran.cloud/v1/page/${pageNumber}/quran-uthmani`);
     if (!response.ok) throw new Error("Network");
@@ -98,7 +110,13 @@ function isArabicContent(text: string): boolean {
 export const fetchTafseer = async (surahId: number, verseNumber: number, edition: string): Promise<string> => {
   const surahKey = `${edition}:${surahId}`;
   
-  // 1. Check Memory Cache
+  // 1. Check Offline DB (Only for Muyassar currently)
+  if (edition === 'ar.muyassar') {
+      const offlineText = await getOfflineTafseerText(surahId, verseNumber);
+      if (offlineText) return offlineText;
+  }
+
+  // 2. Check Memory Cache
   if (tafseerCache[surahKey] && tafseerCache[surahKey][verseNumber]) {
       return tafseerCache[surahKey][verseNumber];
   }
@@ -110,14 +128,12 @@ export const fetchTafseer = async (surahId: number, verseNumber: number, edition
       return text;
   };
 
-  // 2. Try AlQuran.Cloud First (Most reliable for Arabic Text: Muyassar, Jalalayn, IbnKathir)
-  // Note: 'ar.saadi' is NOT supported by AlQuran.Cloud, so it will throw error and go to fallback.
+  // 3. Try AlQuran.Cloud First (Most reliable for Arabic Text: Muyassar, Jalalayn, IbnKathir)
   try {
       const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surahId}:${verseNumber}/${edition}`);
       if (response.ok) {
           const json = await response.json();
           if (json.status === 'OK' && json.data && json.data.text) {
-             // AlQuran.cloud usually returns clean text
              return cacheAndReturn(json.data.text);
           }
       }
@@ -125,19 +141,16 @@ export const fetchTafseer = async (surahId: number, verseNumber: number, edition
       // Ignore and try fallback
   }
 
-  // 3. Fallback: Quran.com API (Good for Saadi and others if AlQuran.cloud fails)
+  // 4. Fallback: Quran.com API
   const targetId = QURAN_COM_IDS[edition] || 169;
   try {
-      // Use "by_ayah" endpoint to get specific verse tafseer
       const url = `https://api.quran.com/api/v4/tafsirs/${targetId}/by_ayah/${surahId}:${verseNumber}`;
       const response = await fetch(url);
       
       if (response.ok) {
           const data = await response.json();
           if (data && data.tafsir && data.tafsir.text) {
-              // Clean HTML tags from Quran.com response
               const cleanedText = data.tafsir.text.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
-              
               if (isArabicContent(cleanedText)) {
                   return cacheAndReturn(cleanedText);
               }
@@ -147,5 +160,5 @@ export const fetchTafseer = async (surahId: number, verseNumber: number, edition
       console.error("All Tafseer sources failed", e);
   }
 
-  return "عذراً، التفسير غير متوفر حالياً لهذا الجزء. تأكد من اتصالك بالإنترنت.";
+  return "عذراً، التفسير يتطلب اتصالاً بالإنترنت.";
 };

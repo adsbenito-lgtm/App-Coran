@@ -352,15 +352,15 @@ const App: React.FC = () => {
     if (activeTab === Tab.STORIES) {
       return <StoriesView settings={settings} />;
     }
-
-    // Azkar Logic
-    if (activeTab === Tab.AZKAR) {
-      return <DuaView settings={settings} />;
-    }
     
     // Prayer / Qibla Logic
     if (activeTab === Tab.PRAYER) {
       return <PrayerTimesView settings={settings} prayerTimes={prayerTimes} locationName={locationName} />;
+    }
+
+    // Azkar Logic
+    if (activeTab === Tab.AZKAR) {
+      return <DuaView settings={settings} />;
     }
 
     // Settings Logic

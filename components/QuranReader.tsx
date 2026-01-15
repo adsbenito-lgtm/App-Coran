@@ -1,9 +1,11 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Surah, Verse, AppSettings, QuranPage, TafseerId } from '../types';
 import { ChevronRight, ChevronLeft, BookOpen, RotateCw, X, Play, Pause, SkipForward, SkipBack, AlertCircle } from 'lucide-react';
 import { fetchSurahVerses, fetchQuranPage, fetchTafseer } from '../services/quranApi';
 import { getAudioUrl, getReciterName } from '../services/audioService';
+import { getOfflineAudioBlob } from '../services/offlineService';
 
 interface QuranReaderProps {
   settings: AppSettings;
@@ -73,44 +75,65 @@ const QuranReader: React.FC<QuranReaderProps> = ({ settings, goBack, surah, init
   }, []);
 
   useEffect(() => {
-    if (!playingVerse || !audioRef.current) return;
+    let activeBlobUrl: string | null = null;
 
-    // Reset error state when verse changes
-    setAudioError(false);
+    const setupAudio = async () => {
+        if (!playingVerse || !audioRef.current) return;
 
-    // Construct URL for playingVerse
-    // Note: playingVerse needs valid surah data. 
-    const sId = playingVerse.surah?.id || surah.id;
-    const url = getAudioUrl(settings.selectedReciter, sId, playingVerse.number);
-    
-    // Only update src if it's different to avoid reloading
-    if (audioRef.current.src !== url) {
-        audioRef.current.src = url;
-        audioRef.current.load();
-    }
-    
-    if (isPlaying) {
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                // If it's an AbortError (user paused quickly), ignore. 
-                // If it's NotSupportedError, handle it.
-                if (error.name !== 'AbortError') {
-                    console.error("Audio play failed", error);
-                    setIsPlaying(false);
-                    setAudioError(true);
-                }
-            });
+        // Reset error state when verse changes
+        setAudioError(false);
+
+        // Determine Source (Offline or Online)
+        const sId = playingVerse.surah?.id || surah.id;
+        
+        // 1. Check Offline
+        const offlineBlob = await getOfflineAudioBlob(settings.selectedReciter, sId, playingVerse.number);
+        
+        let url = '';
+        if (offlineBlob) {
+            url = URL.createObjectURL(offlineBlob);
+            activeBlobUrl = url;
+        } else {
+            // 2. Fallback Online
+            url = getAudioUrl(settings.selectedReciter, sId, playingVerse.number);
         }
-    } else {
-        audioRef.current.pause();
-    }
+        
+        // Only update src if it's different to avoid reloading
+        if (audioRef.current.src !== url) {
+            audioRef.current.src = url;
+            audioRef.current.load();
+        }
+        
+        if (isPlaying) {
+            const playPromise = audioRef.current.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    if (error.name !== 'AbortError') {
+                        console.error("Audio play failed", error);
+                        setIsPlaying(false);
+                        setAudioError(true);
+                    }
+                });
+            }
+        } else {
+            audioRef.current.pause();
+        }
 
-    // Scroll to verse logic
-    const element = document.getElementById(`verse-${playingVerse.id}`);
-    if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+        // Scroll to verse logic
+        const element = document.getElementById(`verse-${playingVerse.id}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
+
+    setupAudio();
+
+    return () => {
+        // Cleanup blob url if it was created
+        if (activeBlobUrl) {
+            URL.revokeObjectURL(activeBlobUrl);
+        }
+    };
 
   }, [playingVerse, isPlaying, settings.selectedReciter, surah.id]);
 
@@ -135,22 +158,6 @@ const QuranReader: React.FC<QuranReaderProps> = ({ settings, goBack, surah, init
       }
   };
 
-  const playNextVerse = () => {
-      // Need current state of playingVerse. 
-      // Since this is called from event listener, we rely on React state updates or pass params.
-      // However, closure might be stale in event listener if not handled carefully.
-      // The useEffect dependency handles re-attaching listener or we use a ref/wrapper.
-      // Actually, relying on state inside useEffect is tricky if dependencies change.
-      // But here we call playNextVerse from a stable function reference if possible?
-      // Simplified: We call it from useEffect, but we need the LATEST playingVerse.
-      // We will access playingVerse from state directly in the function scope (render scope),
-      // BUT `onended` is attached in useEffect [].
-      // FIX: Move `playNextVerse` logic inside useEffect or use a Ref for current verse.
-  };
-  
-  // Re-implement playNext/Prev using a ref to access latest state in callbacks or just use state setters
-  // But wait, playNextVerse depends on `playingVerse` state.
-  
   // Ref to hold current playing verse for the 'ended' event listener
   const playingVerseRef = useRef<Verse | null>(null);
   useEffect(() => { playingVerseRef.current = playingVerse; }, [playingVerse]);
@@ -186,11 +193,16 @@ const QuranReader: React.FC<QuranReaderProps> = ({ settings, goBack, surah, init
       }
   };
 
+  // Helper for onEnded listener
+  const playNextVerse = () => {
+      navigateVerse('next');
+  };
+
   // Override the component-scoped functions to use the Ref-based logic for consistent behavior
   // This `playNextVerse` is called by the `onended` event listener
   useEffect(() => {
       if (!audioRef.current) return;
-      audioRef.current.onended = () => navigateVerse('next');
+      audioRef.current.onended = () => playNextVerse();
   }, [pageMetadata, verses]); // Re-bind when list changes
 
   // UI Button Handlers
@@ -288,9 +300,7 @@ const QuranReader: React.FC<QuranReaderProps> = ({ settings, goBack, surah, init
       const names = {
           'ar.muyassar': 'التفسير الميسر',
           'ar.jalalayn': 'تفسير الجلالين',
-          'ar.ibnkathir': 'تفسير ابن كثير',
-          'ar.qurtubi': 'تفسير القرطبي',
-          'ar.tabari': 'تفسير الطبري'
+          'ar.qurtubi': 'تفسير القرطبي'
       };
       return names[id] || 'التفسير';
   };

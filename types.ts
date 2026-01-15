@@ -1,4 +1,5 @@
 
+
 export interface Surah {
   id: number;
   name: string;
@@ -81,6 +82,8 @@ export interface PrayerTimesData {
     };
     gregorian: {
       date: string;
+      day: string;
+      year: string;
       weekday: {
         en: string;
       };
@@ -99,7 +102,7 @@ export interface PrayerTimesData {
 export type QuranFont = 'Amiri' | 'Noto Naskh Arabic' | 'Scheherazade New';
 export type ReadingMode = 'list' | 'mushaf';
 export type VerseNumberStyle = 'circle' | 'square' | 'flower';
-export type TafseerId = 'ar.muyassar' | 'ar.jalalayn' | 'ar.ibnkathir' | 'ar.qurtubi' | 'ar.tabari' | 'ar.saadi';
+export type TafseerId = 'ar.muyassar' | 'ar.jalalayn' | 'ar.qurtubi';
 
 export interface AppSettings {
   darkMode: boolean;
