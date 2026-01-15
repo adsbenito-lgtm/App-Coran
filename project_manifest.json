@@ -1,0 +1,99 @@
+
+{
+  "project_info": {
+    "name": "Al-Bayan Islamic Companion",
+    "arabic_name": "البيان - رفيق المسلم",
+    "version": "1.0.0",
+    "description": "A comprehensive, offline-first Islamic web application designed to be a daily spiritual companion. It integrates the Noble Quran, Audio Recitations, Prayer Times, and Azkar in a modern, user-friendly interface.",
+    "license": "MIT",
+    "repository_type": "Open Source"
+  },
+  "features": {
+    "quran_reading": {
+      "title": "Noble Quran Experience",
+      "modes": [
+        {
+          "type": "Mushaf Mode",
+          "description": "Simulates a physical Quran book with realistic page flipping, adhering to the Madani 604-page standard."
+        },
+        {
+          "type": "List Mode",
+          "description": "Continuous vertical scroll for quick reading and verse searching."
+        }
+      ],
+      "capabilities": [
+        "Advanced Search (Supports Arabic & Latin Numerals)",
+        "Instant Tafseer (Al-Muyassar, Al-Jalalayn, Al-Qurtubi)",
+        "AI-Powered Insights via Gemini API",
+        "Automatic 'Last Read' Bookmark saving"
+      ]
+    },
+    "audio_recitation": {
+      "title": "Audio & Tilawa",
+      "details": "Verse-by-verse synchronized playback.",
+      "reciters": "15+ World-renowned reciters (e.g., Al-Afasy, Al-Sudais, Al-Minshawi).",
+      "offline_support": "Ability to download specific Reciter audio for offline playback using IndexedDB."
+    },
+    "prayer_times": {
+      "title": "Prayer & Qibla",
+      "calculation_method": "Umm Al-Qura University, Makkah",
+      "features": [
+        "Automatic Geolocation detection",
+        "Next Prayer Countdown",
+        "Animated Qibla Compass",
+        "Hijri & Gregorian Calendar with Monthly View"
+      ]
+    },
+    "azkar_daily": {
+      "title": "Azkar & Dua",
+      "source": "Hisn Al-Muslim",
+      "features": [
+        "Dynamic 'Time-Aware' Azkar Card (Morning/Evening/Sleep)",
+        "Digital Tasbeeh Counter with progress bars",
+        "Categorized Dua Library (Travel, Prayer, Anxiety, etc.)"
+      ]
+    },
+    "media_stories": {
+      "title": "Islamic Media Library",
+      "content": ["Stories of the Prophets", "Seerah", "Educational Series"],
+      "features": [
+        "Video Playback",
+        "Episode Progress Tracking",
+        "Support for YouTube & Direct Video Sources"
+      ]
+    },
+    "customization": {
+      "title": "Settings & UI",
+      "options": [
+        "Dark/Light Mode Toggle",
+        "Font Family Selection (Amiri, Noto Naskh, Uthmani)",
+        "Adjustable Font Sizes",
+        "Offline Data Management Dashboard"
+      ]
+    }
+  },
+  "technical_architecture": {
+    "frontend_framework": "React 18",
+    "language": "TypeScript",
+    "styling": "Tailwind CSS",
+    "icons": "Lucide React",
+    "build_tool": "Vite",
+    "state_management": "React Hooks (useState, useEffect, useContext)",
+    "data_persistence": {
+      "localStorage": "User settings, bookmarks, reading progress",
+      "indexedDB": "Offline storage for Quran text, Tafseer JSON, and Audio Blobs"
+    },
+    "apis": [
+      { "name": "AlQuran Cloud", "usage": "Quran Text, Meta Data, Tafseer" },
+      { "name": "AlAdhan", "usage": "Prayer Times, Calendar" },
+      { "name": "EveryAyah", "usage": "MP3 Audio Files" },
+      { "name": "Google Gemini", "usage": "AI Analysis & Summaries" }
+    ]
+  },
+  "how_it_works": {
+    "initialization": "On first load, the app requests geolocation permissions to fetch accurate prayer times. It then defaults to the 'Dashboard' view.",
+    "offline_strategy": "The app follows an 'Offline-First' approach. Users can go to Settings > Downloads to fetch Quran text and Audio. Once downloaded, the app detects the lack of internet connection and serves data directly from IndexedDB.",
+    "navigation": "A persistent bottom navigation bar allows quick switching between Home, Quran, Prayer, Azkar, Stories, and Settings.",
+    "state_sync": "Reading progress (page number) and video watch history are automatically synced to LocalStorage, ensuring the user resumes exactly where they left off."
+  }
+}
