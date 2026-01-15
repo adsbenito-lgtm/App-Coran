@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import Layout from './components/Layout';
 import SettingsView from './components/Settings';
 import QuranReader from './components/QuranReader';
-import StoriesView from './components/StoriesView';
-import DuaView from './components/DuaView';
+import StoriesView, { INITIAL_SERIES_DATA } from './components/StoriesView';
+import DuaView, { MOCK_AZKAR } from './components/DuaView';
 import PrayerTimesView from './components/PrayerTimesView';
 import { Tab, AppSettings, Surah, LastReadState, PrayerTimesData } from './types';
-import { Search, Book, Moon, Calendar, ChevronLeft, Clock, BookOpen, Layers, MapPin, Sunrise, Sun, Sunset, CloudMoon, Compass, Sparkles } from 'lucide-react';
+import { Search, Book, Moon, Calendar, ChevronLeft, Clock, BookOpen, Layers, MapPin, Sunrise, Sun, Sunset, CloudMoon, Compass, Sparkles, FileText, Hash, ArrowRight, Tv, Play } from 'lucide-react';
 import { fetchPrayerTimes, formatTime12H, getNextPrayer } from './services/prayerService';
 import { formatNumber } from './utils/number';
 
@@ -134,52 +134,108 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>({ 
     darkMode: false, 
     fontSize: 2,
-    tafseerFontSize: 3, // Default Tafseer Font Size
-    tafseerFontFamily: 'Amiri', // Default Tafseer Font Family
+    tafseerFontSize: 3, 
+    tafseerFontFamily: 'Amiri', 
     fontFamily: 'Amiri',
     readingMode: 'mushaf',
     verseNumberStyle: 'circle',
     selectedTafseer: 'ar.muyassar',
     selectedReciter: 'alafasy',
-    numeralSystem: 'arabic' // Default to Arabic Numerals (١٢٣)
+    numeralSystem: 'arabic' 
   });
   const [selectedSurah, setSelectedSurah] = useState<Surah | null>(null);
   const [initialPage, setInitialPage] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Last Read Persistence
+  // Last Read & Watch Persistence
   const [lastRead, setLastRead] = useState<LastReadState | null>(null);
+  const [lastWatchedSeries, setLastWatchedSeries] = useState<{id: string, title: string, episode: number} | null>(null);
+  const [resumeSeriesId, setResumeSeriesId] = useState<string | null>(null);
 
   // Prayer Times State
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimesData | null>(null);
   const [nextPrayer, setNextPrayer] = useState<string>('');
   const [locationName, setLocationName] = useState<string>('مكة المكرمة');
 
-  // Load from LocalStorage and Fetch Data
-  useEffect(() => {
-    const saved = localStorage.getItem('lastRead');
-    if (saved) {
-      try {
-        setLastRead(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse lastRead", e);
-      }
-    }
+  // Time-based Content State
+  const [dailyZikr, setDailyZikr] = useState<{catTitle: string, item: any, theme: any} | null>(null);
 
+  // Load Data
+  useEffect(() => {
+    // Dark Mode
     if (settings.darkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
 
-    // Fetch Prayer Times
+    // Time-based Content Logic
+    const h = new Date().getHours();
+    let catId = 1;
+    let theme = { 
+      grad: 'from-amber-500 via-orange-600 to-red-600', 
+      icon: <Sunrise size={16} />,
+      label: 'إشراقة الصباح'
+    };
+
+    if (h >= 16 && h < 21) {
+        catId = 2; // Evening
+        theme = { 
+          grad: 'from-indigo-700 via-purple-700 to-pink-700', 
+          icon: <Sunset size={16} />,
+          label: 'هدوء المساء'
+        };
+    } else if (h >= 21 || h < 4) {
+        catId = 3; // Sleep
+        theme = { 
+          grad: 'from-slate-900 via-gray-800 to-black', 
+          icon: <Moon size={16} />,
+          label: 'سكون الليل'
+        };
+    }
+
+    const cat = MOCK_AZKAR.find(c => c.id === catId);
+    if (cat && cat.items.length > 0) {
+        const item = cat.items[Math.floor(Math.random() * cat.items.length)];
+        setDailyZikr({ catTitle: cat.title, item, theme });
+    }
+
+  }, [settings.darkMode]); // Re-run if darkMode changes (though logic is time based, mainly mount)
+
+  // ... (Rest of useEffects for LastRead, PrayerTimes remain same) ...
+  useEffect(() => {
+    if (activeTab === Tab.HOME) {
+        const saved = localStorage.getItem('lastRead');
+        if (saved) {
+          try {
+            setLastRead(JSON.parse(saved));
+          } catch (e) {
+            console.error("Failed to parse lastRead", e);
+          }
+        }
+        const lastSeriesId = localStorage.getItem('last_active_series');
+        if (lastSeriesId) {
+            const series = INITIAL_SERIES_DATA.find(s => s.id === lastSeriesId);
+            if (series) {
+                 const progress = localStorage.getItem(`series_progress_${lastSeriesId}`);
+                 const episodeIndex = progress ? parseInt(progress) : 0;
+                 setLastWatchedSeries({
+                     id: lastSeriesId,
+                     title: series.title,
+                     episode: episodeIndex + 1
+                 });
+            }
+        }
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
     const initPrayerTimes = async () => {
-       // Request location
        if (navigator.geolocation) {
            navigator.geolocation.getCurrentPosition(
                async (position) => {
                    const { latitude, longitude } = position.coords;
-                   setLocationName('موقعي الحالي'); // Or use reverse geocoding if needed
+                   setLocationName('موقعي الحالي');
                    const data = await fetchPrayerTimes(latitude, longitude);
                    if (data) {
                        setPrayerTimes(data);
@@ -188,7 +244,7 @@ const App: React.FC = () => {
                },
                async (error) => {
                    console.log("Geolocation blocked or failed, defaulting to Mecca");
-                   const data = await fetchPrayerTimes(null, null); // Uses default inside service
+                   const data = await fetchPrayerTimes(null, null);
                    if (data) {
                        setPrayerTimes(data);
                        setNextPrayer(getNextPrayer(data.timings));
@@ -196,7 +252,6 @@ const App: React.FC = () => {
                }
            );
        } else {
-           // Fallback if API not supported
            const data = await fetchPrayerTimes(null, null);
            if (data) {
                setPrayerTimes(data);
@@ -205,46 +260,49 @@ const App: React.FC = () => {
        }
     };
     initPrayerTimes();
-
-  }, [settings.darkMode]);
+  }, []);
 
   const handlePageChange = (page: number, surah: Surah | undefined) => {
     if (!surah) return;
-    
-    // Find the Surah that contains this page if standard Mushaf
     let actualSurah = surah;
     const foundSurah = SURAHS.find(s => {
        return page >= s.startPage && (SURAHS[s.id] ? page < SURAHS[s.id].startPage : page <= 604);
     });
-
     if (foundSurah) actualSurah = foundSurah;
-
     const newState: LastReadState = {
       surahId: actualSurah.id,
       surahName: actualSurah.name,
       pageNumber: page,
       timestamp: Date.now()
     };
-    
     setLastRead(newState);
     localStorage.setItem('lastRead', JSON.stringify(newState));
   };
 
+  const getSurahFromPage = (page: number) => {
+     return [...SURAHS].reverse().find(s => s.startPage <= page) || SURAHS[0];
+  };
+
   const openSurah = (surah: Surah) => {
     let pageToOpen = surah.startPage;
-
     if (lastRead) {
         const nextSurah = SURAHS[surah.id];
         const endPage = nextSurah ? nextSurah.startPage - 1 : 604;
-        
         if (lastRead.pageNumber >= surah.startPage && lastRead.pageNumber <= endPage) {
             pageToOpen = lastRead.pageNumber;
         }
     }
-
     setInitialPage(pageToOpen);
     setSelectedSurah(surah);
     setActiveTab(Tab.QURAN);
+  };
+  
+  const handlePageNavigation = (page: number) => {
+      const targetSurah = getSurahFromPage(page);
+      setInitialPage(page);
+      setSelectedSurah(targetSurah);
+      setActiveTab(Tab.QURAN);
+      setSearchTerm("");
   };
 
   const resumeReading = () => {
@@ -260,13 +318,29 @@ const App: React.FC = () => {
     }
   };
 
+  const handleResumeWatching = () => {
+      if (lastWatchedSeries) {
+          setResumeSeriesId(lastWatchedSeries.id);
+          setActiveTab(Tab.STORIES);
+      }
+  };
+
+  const onTabChange = (t: Tab) => {
+      if (t === Tab.STORIES) setResumeSeriesId(null);
+      setActiveTab(t);
+  };
+
   const filteredSurahs = SURAHS.filter(s => 
     s.name.includes(searchTerm) || 
     s.englishName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.id.toString() === searchTerm
   );
 
-  // If reading a specific Surah, render QuranReader full screen without Layout
+  const searchAsNumber = parseInt(searchTerm);
+  const isPageSearch = !isNaN(searchAsNumber) && searchAsNumber >= 1 && searchAsNumber <= 604;
+  const isSurahNumberSearch = !isNaN(searchAsNumber) && searchAsNumber >= 1 && searchAsNumber <= 114;
+  const targetSurahByNumber = isSurahNumberSearch ? SURAHS.find(s => s.id === searchAsNumber) : null;
+
   if (activeTab === Tab.QURAN && selectedSurah) {
     return (
       <QuranReader 
@@ -281,9 +355,10 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     if (activeTab === Tab.QURAN) {
-      // List of Surahs view
+      // (Quran List render remains same)
       return (
         <div className="p-4 pb-24">
+           {/* ... existing Quran tab code ... */}
            <div className="flex items-center justify-between mb-6">
              <h2 className="text-2xl font-bold text-emerald-800 dark:text-emerald-400">القرآن الكريم</h2>
              <div className="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-3 py-1 rounded-full text-xs font-bold">
@@ -294,20 +369,63 @@ const App: React.FC = () => {
            <div className="relative mb-6 group">
              <input 
                type="text" 
-               placeholder="ابحث عن سورة..." 
+               placeholder="ابحث عن سورة، رقم صفحة (١-٦٠٤)، أو رقم آية..." 
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
-               className="w-full bg-white dark:bg-gray-800 p-4 pr-12 rounded-2xl shadow-sm border border-transparent focus:border-emerald-500 outline-none dark:text-white transition-all" 
+               className="w-full bg-white dark:bg-gray-800 p-4 pr-12 rounded-2xl shadow-sm border border-transparent focus:border-emerald-500 outline-none dark:text-white transition-all text-right" 
+               dir="rtl"
              />
              <Search className="absolute right-4 top-4 text-gray-400 group-focus-within:text-emerald-500" size={20} />
            </div>
+
+           {(isPageSearch || isSurahNumberSearch) && (
+               <div className="mb-6 grid gap-3 animate-in fade-in slide-in-from-top-2">
+                   {isPageSearch && (
+                       <button 
+                         onClick={() => handlePageNavigation(searchAsNumber)}
+                         className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors group"
+                       >
+                           <div className="flex items-center gap-3">
+                               <div className="p-2 bg-amber-100 dark:bg-amber-800 rounded-lg text-amber-700 dark:text-amber-200">
+                                   <FileText size={24} />
+                               </div>
+                               <div className="text-right">
+                                   <h3 className="font-bold text-gray-800 dark:text-white">الذهاب للصفحة {formatNumber(searchAsNumber, settings.numeralSystem)}</h3>
+                                   <p className="text-xs text-gray-500 dark:text-gray-400">
+                                       من سورة {getSurahFromPage(searchAsNumber).name}
+                                   </p>
+                               </div>
+                           </div>
+                           <ArrowRight className="text-amber-500 transform rotate-180 group-hover:-translate-x-1 transition-transform" />
+                       </button>
+                   )}
+
+                   {targetSurahByNumber && (
+                       <button 
+                         onClick={() => openSurah(targetSurahByNumber)}
+                         className="flex items-center justify-between p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors group"
+                       >
+                           <div className="flex items-center gap-3">
+                               <div className="p-2 bg-emerald-100 dark:bg-emerald-800 rounded-lg text-emerald-700 dark:text-emerald-200">
+                                   <Hash size={24} />
+                               </div>
+                               <div className="text-right">
+                                   <h3 className="font-bold text-gray-800 dark:text-white">سورة {targetSurahByNumber.name}</h3>
+                                   <p className="text-xs text-gray-500 dark:text-gray-400">
+                                       ترتيب المصحف: {formatNumber(targetSurahByNumber.id, settings.numeralSystem)}
+                                   </p>
+                               </div>
+                           </div>
+                           <ArrowRight className="text-emerald-500 transform rotate-180 group-hover:-translate-x-1 transition-transform" />
+                       </button>
+                   )}
+               </div>
+           )}
            
            <div className="space-y-3">
-             {filteredSurahs.map((surah, index) => {
+             {filteredSurahs.map((surah) => {
                const nextSurah = SURAHS[surah.id];
                const endPage = nextSurah ? nextSurah.startPage - 1 : 604;
-               
-               // Check if this surah is the "Last Read" one
                const isLastRead = lastRead && lastRead.surahId === surah.id;
 
                return (
@@ -348,22 +466,18 @@ const App: React.FC = () => {
       );
     }
 
-    // Stories Logic
     if (activeTab === Tab.STORIES) {
-      return <StoriesView settings={settings} />;
+      return <StoriesView settings={settings} initialSeriesId={resumeSeriesId} />;
     }
     
-    // Prayer / Qibla Logic
     if (activeTab === Tab.PRAYER) {
       return <PrayerTimesView settings={settings} prayerTimes={prayerTimes} locationName={locationName} />;
     }
 
-    // Azkar Logic
     if (activeTab === Tab.AZKAR) {
       return <DuaView settings={settings} />;
     }
 
-    // Settings Logic
     if (activeTab === Tab.SETTINGS) {
       return <SettingsView settings={settings} setSettings={setSettings} />;
     }
@@ -429,34 +543,45 @@ const App: React.FC = () => {
              )}
         </div>
 
-        {/* Daily Verse Card */}
-        <div className="relative group overflow-hidden rounded-3xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900"></div>
-          
+        {/* Dynamic Daily Zikr Card (Replaces Daily Verse) */}
+        {dailyZikr ? (
+        <div 
+            onClick={() => setActiveTab(Tab.AZKAR)}
+            className="relative group overflow-hidden rounded-3xl cursor-pointer shadow-lg shadow-gray-200/50 dark:shadow-none transition-transform active:scale-[0.98]"
+        >
+          <div className={`absolute inset-0 bg-gradient-to-br ${dailyZikr.theme.grad}`}></div>
           {/* Decorative Pattern overlay */}
           <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/arabesque.png')]"></div>
-          
           {/* Circle Decorations */}
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
-          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-emerald-500/20 rounded-full blur-xl"></div>
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
 
           <div className="relative p-6 text-white text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-xs font-medium mb-4 border border-white/10">
-              <Sparkles size={16} />
-              <span>آية اليوم</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-medium mb-4 border border-white/10 shadow-sm">
+              {dailyZikr.theme.icon}
+              <span>{dailyZikr.theme.label}</span>
             </div>
             
-            <p className="font-quran text-2xl md:text-3xl leading-loose mb-6 drop-shadow-sm">
-              "فَإِنَّ مَعَ ٱلۡعُسۡرِ يُسۡرًا"
+            <p className="font-quran text-lg md:text-xl leading-loose mb-6 drop-shadow-sm line-clamp-4">
+              "{dailyZikr.item.text}"
             </p>
             
-            <div className="flex items-center justify-center gap-2 text-emerald-200 text-sm font-medium">
-              <span>سورة الشرح</span>
-              <span className="w-1 h-1 bg-emerald-200 rounded-full"></span>
-              <span>الآية {formatNumber(5, settings.numeralSystem)}</span>
+            <div className="flex items-center justify-center gap-2 text-white/90 text-sm font-medium">
+              <span className="bg-white/20 px-3 py-1 rounded-full text-xs hover:bg-white/30 transition-colors">عرض الأذكار</span>
             </div>
           </div>
         </div>
+        ) : (
+            // Fallback to Verse if no zikr found
+            <div className="relative group overflow-hidden rounded-3xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900"></div>
+              <div className="relative p-6 text-white text-center">
+                <p className="font-quran text-2xl md:text-3xl leading-loose mb-6 drop-shadow-sm">
+                  "فَإِنَّ مَعَ ٱلۡعُسۡرِ يُسۡرًا"
+                </p>
+              </div>
+            </div>
+        )}
 
         {/* Last Read Section */}
         {lastRead ? (
@@ -485,6 +610,22 @@ const App: React.FC = () => {
                 <ChevronLeft size={20} />
               </button>
            </div>
+        )}
+
+        {/* Continue Watching Section */}
+        {lastWatchedSeries && (
+            <div className="bg-white dark:bg-gray-800 p-1 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center pr-1 pl-4 gap-4 animate-in slide-in-from-bottom-3 mt-4">
+                <div className="bg-rose-100 dark:bg-rose-900/30 w-16 h-16 rounded-2xl flex items-center justify-center text-rose-600 dark:text-rose-400">
+                    <Tv size={24} />
+                </div>
+                <div className="flex-1 py-3 cursor-pointer" onClick={handleResumeWatching}>
+                    <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm mb-1">تابع المشاهدة</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{lastWatchedSeries.title} • الحلقة {formatNumber(lastWatchedSeries.episode, settings.numeralSystem)}</p>
+                </div>
+                <button onClick={handleResumeWatching} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300 hover:bg-emerald-500 hover:text-white transition-colors">
+                    <Play size={20} fill="currentColor" />
+                </button>
+            </div>
         )}
 
         {/* Quick Access Grid */}
@@ -526,7 +667,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <Layout activeTab={activeTab} setActiveTab={setActiveTab} settings={settings}>
+    <Layout activeTab={activeTab} setActiveTab={onTabChange} settings={settings}>
       {renderContent()}
     </Layout>
   );

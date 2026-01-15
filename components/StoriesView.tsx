@@ -27,9 +27,10 @@ const YOUTUBE_API_KEY = '';
 
 interface StoriesViewProps {
   settings: AppSettings;
+  initialSeriesId?: string | null;
 }
 
-interface Episode {
+export interface Episode {
     title: string;
     index: number; // 0-based index
     videoId?: string; // YouTube ID (Optional - only for YouTube series)
@@ -37,7 +38,7 @@ interface Episode {
     description?: string;
 }
 
-interface Series {
+export interface Series {
     id: string;
     sheikh: string;
     title: string;
@@ -54,7 +55,7 @@ interface Series {
 
 // --- DATA CONFIGURATION ---
 
-const INITIAL_SERIES_DATA: Series[] = [
+export const INITIAL_SERIES_DATA: Series[] = [
     {
         id: 'othman_prophets',
         sheikh: "د. عثمان الخميس",
@@ -98,7 +99,7 @@ const fetchCustomVideos = async (url: string): Promise<Episode[]> => {
         }
         
         const data = await response.json();
-        console.log(`Fetched Data from ${url}:`, data); 
+        // console.log(`Fetched Data from ${url}:`, data); 
         
         // Handle different API structures (Array root or Object with data/videos property)
         const items = Array.isArray(data) ? data : (data.videos || data.data || []);
@@ -183,7 +184,7 @@ const fetchPlaylistItems = async (playlistId: string): Promise<Episode[] | null>
     }
 };
 
-const StoriesView: React.FC<StoriesViewProps> = ({ settings }) => {
+const StoriesView: React.FC<StoriesViewProps> = ({ settings, initialSeriesId }) => {
   const [seriesList, setSeriesList] = useState<Series[]>(INITIAL_SERIES_DATA);
   const [selectedSeries, setSelectedSeries] = useState<Series | null>(null);
   const [currentEpisodeIndex, setCurrentEpisodeIndex] = useState<number>(0);
@@ -215,12 +216,10 @@ const StoriesView: React.FC<StoriesViewProps> = ({ settings }) => {
       setSavedProgress(loaded);
 
       // Load specific video progress percentages for UI
-      // We scan localStorage keys that match our pattern
       const progressMap: Record<string, number> = {};
       for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
           if (key && key.startsWith('vid_meta_')) {
-              // vid_meta key stores JSON { currentTime, duration }
               try {
                   const raw = localStorage.getItem(key);
                   if (raw) {
@@ -240,7 +239,17 @@ const StoriesView: React.FC<StoriesViewProps> = ({ settings }) => {
       if (typeof window !== 'undefined') {
           setOrigin(window.location.origin);
       }
-  }, []); 
+  }, []);
+
+  // Handle Initial Series ID (Resume from Home)
+  useEffect(() => {
+      if (initialSeriesId && !selectedSeries) {
+          const series = seriesList.find(s => s.id === initialSeriesId);
+          if (series) {
+              handleSeriesSelect(series);
+          }
+      }
+  }, [initialSeriesId]);
 
   const handleSeriesSelect = async (series: Series) => {
       setSelectedSeries(series);
@@ -248,6 +257,9 @@ const StoriesView: React.FC<StoriesViewProps> = ({ settings }) => {
       setVideoError(false);
       setDownloadStatus({});
       setIsDownloadingAll(false);
+      
+      // Save Last Active Series
+      localStorage.setItem('last_active_series', series.id);
       
       const lastIndex = savedProgress[series.id] || 0;
       setCurrentEpisodeIndex(lastIndex);
@@ -284,6 +296,7 @@ const StoriesView: React.FC<StoriesViewProps> = ({ settings }) => {
       setCurrentEpisodeIndex(index);
       setVideoError(false);
       localStorage.setItem(`series_progress_${seriesId}`, index.toString());
+      localStorage.setItem('last_active_series', seriesId); // Update active on episode change too
       setSavedProgress(prev => ({ ...prev, [seriesId]: index }));
       window.scrollTo({ top: 0, behavior: 'smooth' });
   };

@@ -8,7 +8,7 @@ import {
   Plane, DoorOpen, Waves, Sparkles, HandHeart, Feather
 } from 'lucide-react';
 
-const MOCK_AZKAR: AzkarCategory[] = [
+export const MOCK_AZKAR: AzkarCategory[] = [
   {
     id: 1,
     title: "أذكار الصباح",
